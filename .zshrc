@@ -11,6 +11,7 @@ setup_passwordless_sudo() {
 # === Ensure .p10k.zsh is present ===
 if [[ ! -f "$HOME/.p10k.zsh" ]]; then
   curl -fsSL https://raw.githubusercontent.com/moquette/bootstrap/main/.p10k.zsh -o "$HOME/.p10k.zsh"
+  chmod 644 "$HOME/.p10k.zsh"
 fi
 
 # === Only apply sudo setup in interactive shell and after .p10k.zsh check ===
@@ -23,10 +24,28 @@ typeset -g POWERLEVEL9K_INSTANT_PROMPT=quiet
 
 # === Zinit Setup ===
 if [[ ! -s "$HOME/.zinit/bin/zinit.zsh" ]]; then
+  echo "📥 Installing Zinit..."
   mkdir -p "$HOME/.zinit"
-  git clone https://github.com/zdharma-continuum/zinit "$HOME/.zinit/bin"
+  git clone --depth=1 https://github.com/zdharma-continuum/zinit "$HOME/.zinit/bin"
 fi
-source "$HOME/.zinit/bin/zinit.zsh"
+
+if [[ -s "$HOME/.zinit/bin/zinit.zsh" ]]; then
+  source "$HOME/.zinit/bin/zinit.zsh"
+
+  # === Plugins ===
+  zinit ice wait=0 lucid; zinit light zsh-users/zsh-autosuggestions
+  zinit ice wait=0 lucid; zinit light zsh-users/zsh-syntax-highlighting
+  zinit ice wait=0 lucid; zinit light zsh-users/zsh-completions
+  zinit ice depth=1; zinit light romkatv/powerlevel10k
+
+  # === Atuin Setup ===
+  zinit ice as"command" from"gh-r" bpick"atuin-*.tar.gz" mv"atuin*/atuin -> atuin" \
+    atclone"./atuin init zsh > init.zsh; ./atuin gen-completions --shell zsh > _atuin" \
+    atpull"%atclone" src"init.zsh"
+  zinit light atuinsh/atuin
+else
+  echo "⚠️  Zinit not available yet — skipping plugin loading."
+fi
 
 # === Homebrew Setup ===
 case "$(uname -s)-$(uname -m)" in
@@ -57,25 +76,14 @@ if ! command -v code &>/dev/null; then
   brew install --cask visual-studio-code || echo "❌ Failed to install Visual Studio Code."
 fi
 
-# === Plugins ===
-zinit ice wait=0 lucid; zinit light zsh-users/zsh-autosuggestions
-zinit ice wait=0 lucid; zinit light zsh-users/zsh-syntax-highlighting
-zinit ice wait=0 lucid; zinit light zsh-users/zsh-completions
-zinit ice depth=1; zinit light romkatv/powerlevel10k
-
-# === Atuin Setup ===
-zinit ice as"command" from"gh-r" bpick"atuin-*.tar.gz" mv"atuin*/atuin -> atuin" \
-  atclone"./atuin init zsh > init.zsh; ./atuin gen-completions --shell zsh > _atuin" \
-  atpull"%atclone" src"init.zsh"
-zinit light atuinsh/atuin
-
 # === Key Bindings ===
 bindkey '^r' atuin-search
 bindkey '^[[A' atuin-up-search
 bindkey '^[OA' atuin-up-search
 
 # === Completion ===
-autoload -U compinit; compinit -u; zinit cdreplay -q
+autoload -U compinit; compinit -u
+[[ -n "$(command -v zinit)" ]] && zinit cdreplay -q
 
 # === Shell Settings ===
 HISTSIZE=10000
