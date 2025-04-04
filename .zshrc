@@ -7,6 +7,12 @@ setup_passwordless_sudo() {
     echo "$l" | sudo tee "$f" >/dev/null && sudo chmod 0440 "$f"
   }
 }
+
+# === Ensure .p10k.zsh is present ===
+if [[ ! -f "$HOME/.p10k.zsh" ]]; then
+  curl -fsSL https://raw.githubusercontent.com/moquette/bootstrap/main/.p10k.zsh -o "$HOME/.p10k.zsh"
+fi
+
 [[ -z "$POWERLEVEL9K_INSTANT_PROMPT" && $- == *i* ]] && setup_passwordless_sudo
 
 # === Powerlevel10k Instant Prompt ===
