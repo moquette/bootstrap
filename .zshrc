@@ -70,6 +70,11 @@ else
   fi
 fi
 
+# === Persist Homebrew shellenv to ~/.zprofile ===
+if [[ -x "$HOMEBREW_PREFIX/bin/brew" && ! $(grep -F 'brew shellenv' "$HOME/.zprofile" 2>/dev/null) ]]; then
+  echo 'eval "$('"$HOMEBREW_PREFIX"'/bin/brew shellenv)"' >> "$HOME/.zprofile"
+fi
+
 # === Install Visual Studio Code ===
 if ! command -v code &>/dev/null; then
   echo "🔧 Installing Visual Studio Code..."
