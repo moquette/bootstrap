@@ -11,8 +11,10 @@ setup_passwordless_sudo() {
 # === Ensure .p10k.zsh is present ===
 if [[ ! -f "$HOME/.p10k.zsh" ]]; then
   curl -fsSL https://raw.githubusercontent.com/moquette/bootstrap/main/.p10k.zsh -o "$HOME/.p10k.zsh"
+  chmod 644 "$HOME/.p10k.zsh"
 fi
 
+# === Only apply sudo setup in interactive shell and after .p10k.zsh check ===
 [[ -z "$POWERLEVEL9K_INSTANT_PROMPT" && $- == *i* ]] && setup_passwordless_sudo
 
 # === Powerlevel10k Instant Prompt ===
@@ -21,7 +23,7 @@ typeset -g POWERLEVEL9K_INSTANT_PROMPT=quiet
   source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
 
 # === Zinit Setup ===
-if [[ ! -f "$HOME/.zinit/bin/zinit.zsh" ]]; then
+if [[ ! -s "$HOME/.zinit/bin/zinit.zsh" ]]; then
   mkdir -p "$HOME/.zinit"
   git clone https://github.com/zdharma-continuum/zinit "$HOME/.zinit/bin"
 fi
@@ -34,12 +36,20 @@ case "$(uname -s)-$(uname -m)" in
   Linux-*)      HOMEBREW_PREFIX="/home/linuxbrew/.linuxbrew" ;;
   *)            echo "❌ Unsupported OS"; return 1 ;;
 esac
+
 if [[ -x "$HOMEBREW_PREFIX/bin/brew" ]]; then
   eval "$("$HOMEBREW_PREFIX/bin/brew" shellenv)"
 else
-  [[ $- == *i* ]] && echo "🔧 Installing Homebrew..." &&
-    NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" 2>&1 | tee ~/.homebrew-install.log &&
-    eval "$("$HOMEBREW_PREFIX/bin/brew" shellenv)" || echo "❌ Homebrew install failed."
+  if [[ $- == *i* ]]; then
+    echo "🔧 Installing Homebrew..."
+    NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" 2>&1 | tee ~/.homebrew-install.log
+
+    if [[ -x "$HOMEBREW_PREFIX/bin/brew" ]]; then
+      eval "$("$HOMEBREW_PREFIX/bin/brew" shellenv)"
+    else
+      echo "❌ Homebrew install failed."
+    fi
+  fi
 fi
 
 # === Install Visual Studio Code ===
@@ -79,7 +89,6 @@ alias ls='ls -lG'
 alias ll='ls -lah'
 alias x='exit'
 alias c='clear'
-alias r='source ~/.zshrc'
 
 # === Environment Variables ===
 export EDITOR='vim'
@@ -87,4 +96,8 @@ export PATH="$HOME/bin:/usr/local/bin:$PATH"
 
 # === Powerlevel10k Config ===
 [[ -f "$HOME/.p10k.zsh" ]] && source "$HOME/.p10k.zsh"
-[[ ! -f "$HOME/.hushlogin" ]] && touch "$HOME/.hushlogin"
+
+# === Silence Login Message ===
+if [[ $- == *i* && ! -f "$HOME/.hushlogin" ]]; then
+  touch "$HOME/.hushlogin" 2>/dev/null
+fi
