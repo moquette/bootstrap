@@ -11,7 +11,6 @@ setup_passwordless_sudo() {
 # === Ensure .p10k.zsh is present ===
 if [[ ! -f "$HOME/.p10k.zsh" ]]; then
   curl -fsSL https://raw.githubusercontent.com/moquette/bootstrap/main/.p10k.zsh -o "$HOME/.p10k.zsh"
-  chmod 644 "$HOME/.p10k.zsh"
 fi
 
 # === Only apply sudo setup in interactive shell and after .p10k.zsh check ===
