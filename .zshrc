@@ -75,7 +75,7 @@ HISTFILE="$HOME/.zsh_history"
 setopt HIST_IGNORE_DUPS HIST_IGNORE_SPACE
 
 # === Aliases ===
-alias ls='ls -G'
+alias ls='ls -lG'
 alias ll='ls -lah'
 alias x='exit'
 alias c='clear'
