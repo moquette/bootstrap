@@ -85,10 +85,11 @@ HISTFILE="$HOME/.zsh_history"
 setopt HIST_IGNORE_DUPS HIST_IGNORE_SPACE
 
 # === Aliases ===
-alias ls='ls -lG'
-alias ll='ls -lah'
-alias x='exit'
 alias c='clear'
+alias lh='ls -ld .??*'
+alias ll='ls -lah'
+alias ls='ls -lG'
+alias x='exit'
 
 # === Environment Variables ===
 export EDITOR='vim'
