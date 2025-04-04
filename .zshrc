@@ -23,14 +23,22 @@ typeset -g POWERLEVEL9K_INSTANT_PROMPT=quiet
   source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
 
 # === Zinit Setup ===
-if [[ ! -s "$HOME/.zinit/bin/zinit.zsh" ]]; then
+ZINIT_HOME="$HOME/.zinit"
+ZINIT_BIN="$ZINIT_HOME/bin"
+ZINIT_ZSH="$ZINIT_BIN/zinit.zsh"
+
+if [[ ! -s "$ZINIT_ZSH" ]]; then
   echo "📥 Installing Zinit..."
-  mkdir -p "$HOME/.zinit"
-  git clone --depth=1 https://github.com/zdharma-continuum/zinit "$HOME/.zinit/bin"
+  mkdir -p "$ZINIT_HOME"
+  git clone --depth=1 https://github.com/zdharma-continuum/zinit "$ZINIT_BIN"
 fi
 
-if [[ -s "$HOME/.zinit/bin/zinit.zsh" ]]; then
-  source "$HOME/.zinit/bin/zinit.zsh"
+if [[ -s "$ZINIT_ZSH" ]]; then
+  source "$ZINIT_ZSH"
+
+  if ! zinit self-update &>/dev/null; then
+    echo "⚠️  Zinit failed to update or run correctly."
+  fi
 
   # === Plugins ===
   zinit ice wait=0 lucid; zinit light zsh-users/zsh-autosuggestions
@@ -44,7 +52,7 @@ if [[ -s "$HOME/.zinit/bin/zinit.zsh" ]]; then
     atpull"%atclone" src"init.zsh"
   zinit light atuinsh/atuin
 else
-  echo "⚠️  Zinit not available yet — skipping plugin loading."
+  echo "❌ Zinit failed to install or is missing."
 fi
 
 # === Homebrew Setup ===
