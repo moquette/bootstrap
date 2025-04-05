@@ -1,0 +1,26 @@
+# === Environment Variables ===
+export EDITOR="vim"
+export PATH="$HOME/bin:/usr/local/bin:$PATH"
+
+# === Completion ===
+autoload -U compinit
+compinit -u
+
+# === Key Bindings ===
+bindkey '^r' atuin-search
+bindkey '^[[A' atuin-up-search
+bindkey '^[OA' atuin-up-search
+
+# === Shell Settings ===
+HISTSIZE=10000
+SAVEHIST=10000
+HISTFILE="$HOME/.zsh_history"
+setopt HIST_IGNORE_DUPS HIST_IGNORE_SPACE
+
+# === Aliases ===
+alias c='clear'
+alias lh='ls -ld .??*'
+alias ll='ls -lah'
+alias ls='ls -lG'
+alias r='source ~/.zshrc'
+alias x='exit'
