@@ -12,9 +12,7 @@ setup_passwordless_sudo() {
     echo "$rule" | sudo tee "$file" >/dev/null && sudo chmod 0440 "$file"
   fi
 }
-
-# === Apply Passwordless Sudo Early ===
-[[ $- == *i* ]] && setup_passwordless_sudo
+setup_passwordless_sudo
 
 # === Xcode CLT Check ===
 install_xcode_clt() {
