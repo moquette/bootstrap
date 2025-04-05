@@ -13,23 +13,6 @@ setup_passwordless_sudo() {
 # === Apply Passwordless Sudo Early ===
 [[ $- == *i* ]] && setup_passwordless_sudo
 
-# Pause further execution if Xcode CLT or Homebrew are not yet installed.
-
-# --- Xcode CLT Check ---
-#if ! xcode-select --print-path &>/dev/null || [[ ! -d /Library/Developer/CommandLineTools ]]; then
-#  echo "Xcode Command Line Tools not installed. Installing..."
-#  touch /tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress
-#  PROD=$(softwareupdate -l | grep -o "Label: Command Line Tools for Xcode-[0-9.]*" | sed 's/^Label: //' | head -n1)
-#  if [[ -n "$PROD" ]]; then
-#    softwareupdate -i "$PROD" --verbose
-#    echo "Xcode CLT installation complete. Please restart terminal."
-#  else
-#    echo "Unable to detect Command Line Tools update. Install manually or rerun terminal."
-#  fi
-#  rm -f /tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress
-#  return 0
-#fi
-
 # --- Xcode CLT Check ---
 if ! xcode-select --print-path &>/dev/null || [[ ! -d /Library/Developer/CommandLineTools ]]; then
   echo "Xcode Command Line Tools not installed. Installing..."
@@ -55,12 +38,12 @@ esac
 if [[ ! -x "$HOMEBREW_PREFIX/bin/brew" ]]; then
   echo "Homebrew not found. Installing..."
   NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" | tee ~/.homebrew-install.log
+
   if [[ ! -x "$HOMEBREW_PREFIX/bin/brew" ]]; then
     echo "Homebrew installation failed. Please retry."
-    return 0
-  fi
-  eval "$($HOMEBREW_PREFIX/bin/brew shellenv)"
-  cat <<EOF >"$HOME/.zprofile"
+  else
+    eval "$($HOMEBREW_PREFIX/bin/brew shellenv)"
+    cat <<EOF >"$HOME/.zprofile"
 # === Homebrew Environment Config ===
 
 export HOMEBREW_NO_ANALYTICS=1
@@ -70,8 +53,8 @@ if [[ -x "$HOMEBREW_PREFIX/bin/brew" ]]; then
   eval "\$($HOMEBREW_PREFIX/bin/brew shellenv)"
 fi
 EOF
-  echo "Homebrew installed. Please restart terminal."
-  return 0
+    echo "Homebrew installed. Continuing bootstrap..."
+  fi
 else
   eval "$($HOMEBREW_PREFIX/bin/brew shellenv)"
 fi
