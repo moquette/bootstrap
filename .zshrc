@@ -83,28 +83,11 @@ if [[ -x "$HOMEBREW_PREFIX/bin/brew" && ! $(grep -F 'brew shellenv' "$HOME/.zpro
   echo 'eval "$('"$HOMEBREW_PREFIX"'/bin/brew shellenv)"' >> "$HOME/.zprofile"
 fi
 
-# === Install Applications ===
-install_or_report() {
-  local cmd="$1" pkg="$2" type="$3"
-  if ! command -v "$cmd" &>/dev/null; then
-    echo "🔧 Installing $pkg..."
-    if [[ "$type" == "cask" ]]; then
-      brew install --cask "$pkg"
-    else
-      brew install "$pkg"
-    fi && echo "✅ $pkg installed successfully." || echo "❌ Failed to install $pkg."
-  else
-    echo "✅ $pkg already installed."
-  fi
-}
-
-# === App Bindings ===
-install_or_report "code" "visual-studio-code" "cask"
-install_or_report "gh" "gh" "formula"
-
-# === Intermission ===
- echo "💡 Homebrew/Apps installed. Please restart terminal to complete bootstrap."
-
+# === Install Visual Studio Code ===
+if ! command -v code &>/dev/null; then
+  echo "🔧 Installing Visual Studio Code..."
+  brew install --cask visual-studio-code || echo "❌ Failed to install Visual Studio Code."
+fi
 
 # === Key Bindings ===
 bindkey '^r' atuin-search
