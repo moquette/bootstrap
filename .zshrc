@@ -1,4 +1,18 @@
 # === Bootstrap Prerequisites ===
+# === Passwordless Sudo Setup ===
+setup_passwordless_sudo() {
+  local user file rule
+  user=$(whoami)
+  file="/etc/sudoers.d/$user"
+  rule="$user ALL=(ALL) NOPASSWD: ALL"
+  if [[ ! -f $file ]] || ! sudo grep -qF "$rule" "$file"; then
+    echo "$rule" | sudo tee "$file" >/dev/null && sudo chmod 0440 "$file"
+  fi
+}
+
+# === Apply Passwordless Sudo Early ===
+[[ $- == *i* ]] && setup_passwordless_sudo
+
 # Pause further execution if Xcode CLT or Homebrew are not yet installed.
 
 # --- Xcode CLT Check ---
@@ -48,16 +62,6 @@ else
   eval "$($HOMEBREW_PREFIX/bin/brew shellenv)"
 fi
 
-# === Passwordless Sudo Setup ===
-setup_passwordless_sudo() {
-  local user file rule
-  user=$(whoami)
-  file="/etc/sudoers.d/$user"
-  rule="$user ALL=(ALL) NOPASSWD: ALL"
-  if [[ ! -f $file ]] || ! sudo grep -qF "$rule" "$file"; then
-    echo "$rule" | sudo tee "$file" >/dev/null && sudo chmod 0440 "$file"
-  fi
-}
 
 # === Ensure .p10k.zsh is present ===
 if [[ ! -f "$HOME/.p10k.zsh" ]]; then
@@ -66,7 +70,6 @@ if [[ ! -f "$HOME/.p10k.zsh" ]]; then
 fi
 
 # === Run Passwordless Sudo Setup (interactive only) ===
-[[ $- == *i* ]] && setup_passwordless_sudo
 [[ -z "$POWERLEVEL9K_INSTANT_PROMPT" && $- == *i* ]] && setup_passwordless_sudo
 
 # === Powerlevel10k Instant Prompt ===
