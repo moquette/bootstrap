@@ -119,7 +119,6 @@ if [[ -s "$HOME/.zinit/bin/zinit.zsh" ]]; then
   source "$HOME/.zinit/bin/zinit.zsh"
   zinit snippet OMZP::git
   zinit ice wait=0 lucid; zinit snippet OMZP::command-not-found
-
   zinit ice wait=0 lucid; zinit light zsh-users/zsh-autosuggestions
   zinit ice wait=0 lucid; zinit light zsh-users/zsh-syntax-highlighting
   zinit ice wait=0 lucid; zinit light zsh-users/zsh-completions
