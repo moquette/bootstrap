@@ -61,6 +61,8 @@ if [[ ! -x "$HOMEBREW_PREFIX/bin/brew" ]]; then
     echo "Writing brew shellenv to .zprofile..."
     grep -q 'brew shellenv' "$HOME/.zprofile" 2>/dev/null || {
       {
+        echo "# === Silence Atuin shell exit messages ==="
+        echo "export ATUIN_SILENT=true"
         echo ""
         echo "# === Homebrew Environment Config ==="
         echo "export HOMEBREW_NO_ANALYTICS=1"
@@ -142,6 +144,7 @@ alias c='clear'
 alias lh='ls -ld .??*'
 alias ll='ls -lah'
 alias ls='ls -lG'
+alias r='source ~/.zshrc'
 alias x='exit'
 
 # === Powerlevel10k Config ===
