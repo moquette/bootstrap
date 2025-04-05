@@ -45,7 +45,6 @@ install_xcode_clt() {
 
 install_xcode_clt
 
-
 # --- Homebrew Check ---
 case "$(uname -s)-$(uname -m)" in
   Darwin-arm64) HOMEBREW_PREFIX="/opt/homebrew" ;;
@@ -54,28 +53,28 @@ case "$(uname -s)-$(uname -m)" in
   *)            echo "Unsupported OS"; return 1 ;;
 esac
 
-if [[ ! -x "$HOMEBREW_PREFIX/bin/brew" ]]; then
+if ! command -v brew &>/dev/null; then
   echo "Homebrew not found. Installing..."
   NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" | tee ~/.homebrew-install.log
 
-  if [[ ! -x "$HOMEBREW_PREFIX/bin/brew" ]]; then
-  echo "Homebrew installation failed. Please retry."
+  if ! command -v brew &>/dev/null; then
+    echo "Homebrew installation failed. Please retry."
   else
-  eval "$($HOMEBREW_PREFIX/bin/brew shellenv)"
-  cat <<EOF >"$HOME/.zprofile"
-# === Homebrew Environment Config ===
-
-export HOMEBREW_NO_ANALYTICS=1
-export HOMEBREW_NO_ENV_HINTS=1
-
-if [[ -x "$HOMEBREW_PREFIX/bin/brew" ]]; then
-  eval "\$($HOMEBREW_PREFIX/bin/brew shellenv)"
-fi
-EOF
-  echo "Homebrew installed. Continuing bootstrap..."
+    eval "$("$HOMEBREW_PREFIX/bin/brew" shellenv)"
+    {
+      echo ""
+      echo "# === Homebrew Environment Config ==="
+      echo "export HOMEBREW_NO_ANALYTICS=1"
+      echo "export HOMEBREW_NO_ENV_HINTS=1"
+      echo ""
+      echo "if command -v brew &>/dev/null; then"
+      echo "  eval \"\$($HOMEBREW_PREFIX/bin/brew shellenv)\""
+      echo "fi"
+    } >> "$HOME/.zprofile"
+    echo "Homebrew installed. Continuing bootstrap..."
   fi
 else
-  eval "$($HOMEBREW_PREFIX/bin/brew shellenv)"
+  eval "$("$HOMEBREW_PREFIX/bin/brew" shellenv)"
 fi
 
 
