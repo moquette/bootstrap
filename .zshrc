@@ -24,19 +24,19 @@ install_xcode_clt() {
   touch /tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress
 
   label=$(softwareupdate -l |
-    grep -o "Label: Command Line Tools for Xcode-[0-9.]*" |
-    sed 's/^Label: //' |
-    grep -E "Command Line Tools for Xcode-($min_version|[1-9][6-9]|[2-9][0-9])" |
-    head -n1)
+  grep -o "Label: Command Line Tools for Xcode-[0-9.]*" |
+  sed 's/^Label: //' |
+  grep -E "Command Line Tools for Xcode-($min_version|[1-9][6-9]|[2-9][0-9])" |
+  head -n1)
 
   if [[ -n $label ]]; then
-    version=$(echo "$label" | sed -E 's/.*Xcode-([0-9.]+)$/\1/')
-    echo "Installing Command Line Tools for Xcode $version..."
-    softwareupdate -i "$label" --verbose
-    echo "Xcode Command Line Tools $version installation completed."
+  version=$(echo "$label" | sed -E 's/.*Xcode-([0-9.]+)$/\1/')
+  echo "Installing Command Line Tools for Xcode $version..."
+  softwareupdate -i "$label" --verbose
+  echo "Xcode Command Line Tools $version installation completed."
   else
-    echo "Xcode Command Line Tools $min_version+ not found. Manual install may be required."
-    echo "Visit https://developer.apple.com/download/all/ or use: sudo xcode-select --install"
+  echo "Xcode Command Line Tools $min_version+ not found. Manual install may be required."
+  echo "Visit https://developer.apple.com/download/all/ or use: sudo xcode-select --install"
   fi
 
   rm -f /tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress
@@ -58,37 +58,45 @@ if [[ ! -x "$HOMEBREW_PREFIX/bin/brew" ]]; then
   NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" | tee ~/.homebrew-install.log
 
   if [[ -x "$HOMEBREW_PREFIX/bin/brew" ]]; then
-    echo "Writing brew shellenv to .zprofile..."
-    grep -q 'brew shellenv' "$HOME/.zprofile" 2>/dev/null || {
-      {
-        echo "# === Silence Atuin shell exit messages ==="
-        echo "export ATUIN_SILENT=true"
-        echo ""
-        echo "# === Homebrew Environment Config ==="
-        echo "export HOMEBREW_NO_ANALYTICS=1"
-        echo "export HOMEBREW_NO_ENV_HINTS=1"
-        echo "eval \"\$($HOMEBREW_PREFIX/bin/brew shellenv)\""
-      } >> "$HOME/.zprofile"
-    }
+  echo "Writing brew shellenv to .zprofile..."
+  if ! grep -q "# === Homebrew Environment Config ===" "$HOME/.zprofile" 2>/dev/null; then
+    {
+    echo ""
+    echo "# === Silence Atuin shell exit messages ==="
+    echo "export ATUIN_SILENT=true"
+    echo ""
+    echo "# === Homebrew Environment Config ==="
+    echo "export HOMEBREW_NO_ANALYTICS=1"
+    echo "export HOMEBREW_NO_ENV_HINTS=1"
+    echo "eval \"\$($HOMEBREW_PREFIX/bin/brew shellenv)\""
+    } >> "$HOME/.zprofile"
+  fi
 
-    eval "$("$HOMEBREW_PREFIX/bin/brew" shellenv)"
-    echo "Homebrew installed. Continuing bootstrap..."
+  eval "$("$HOMEBREW_PREFIX/bin/brew" shellenv)"
+  echo "Homebrew installed. Continuing bootstrap..."
   else
-    echo "Homebrew installation failed. Please retry."
+  echo "Homebrew installation failed. Please retry."
   fi
 else
   eval "$("$HOMEBREW_PREFIX/bin/brew" shellenv)"
 fi
 
+# === Downlload Brewfile ===
+if [[ ! -f "$HOME/Brewfile" ]]; then
+  curl -fsSL https://raw.githubusercontent.com/moquette/bootstrap/main/.Brewfile -o "$HOME/.Brewfile"
+  chmod 644 "$HOME/.Brewfile"
+fi
+# === Run Brewfile ===
+if [ -f "$HOME/.Brewfile" ]; then
+  echo "› brew bundle..."
+  brew bundle --file="$HOME/.Brewfile"
+fi
 
-# === Ensure .p10k.zsh is present ===
+# === Downlload .p10k.zsh ===
 if [[ ! -f "$HOME/.p10k.zsh" ]]; then
   curl -fsSL https://raw.githubusercontent.com/moquette/bootstrap/main/.p10k.zsh -o "$HOME/.p10k.zsh"
   chmod 644 "$HOME/.p10k.zsh"
 fi
-
-# === Run Passwordless Sudo Setup (interactive only) ===
-[[ -z "$POWERLEVEL9K_INSTANT_PROMPT" && $- == *i* ]] 
 
 # === Powerlevel10k Instant Prompt ===
 typeset -g POWERLEVEL9K_INSTANT_PROMPT=quiet
@@ -104,6 +112,9 @@ fi
 
 if [[ -s "$HOME/.zinit/bin/zinit.zsh" ]]; then
   source "$HOME/.zinit/bin/zinit.zsh"
+zinit snippet OMZP::git
+zinit ice wait=0 lucid; zinit snippet OMZP::command-not-found
+
   zinit ice wait=0 lucid; zinit light zsh-users/zsh-autosuggestions
   zinit ice wait=0 lucid; zinit light zsh-users/zsh-syntax-highlighting
   zinit ice wait=0 lucid; zinit light zsh-users/zsh-completions
