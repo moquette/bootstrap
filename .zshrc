@@ -18,6 +18,38 @@ fi
 
 # === Run Passwordless Sudo Setup (interactive only) ===
 [[ $- == *i* ]] && setup_passwordless_sudo
+# === Only apply sudo setup in interactive shell and after .p10k.zsh check ===
+[[ -z "$POWERLEVEL9K_INSTANT_PROMPT" && $- == *i* ]] && setup_passwordless_sudo
+
+# === Powerlevel10k Instant Prompt ===
+typeset -g POWERLEVEL9K_INSTANT_PROMPT=quiet
+[[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]] &&
+  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
+
+# === Zinit Setup ===
+if [[ ! -s "$HOME/.zinit/bin/zinit.zsh" ]]; then
+  echo "📥 Installing Zinit..."
+  mkdir -p "$HOME/.zinit"
+  git clone --depth=1 https://github.com/zdharma-continuum/zinit "$HOME/.zinit/bin"
+fi
+
+if [[ -s "$HOME/.zinit/bin/zinit.zsh" ]]; then
+  source "$HOME/.zinit/bin/zinit.zsh"
+
+  # === Plugins ===
+  zinit ice wait=0 lucid; zinit light zsh-users/zsh-autosuggestions
+  zinit ice wait=0 lucid; zinit light zsh-users/zsh-syntax-highlighting
+  zinit ice wait=0 lucid; zinit light zsh-users/zsh-completions
+  zinit ice depth=1; zinit light romkatv/powerlevel10k
+
+  # === Atuin Setup ===
+  zinit ice as"command" from"gh-r" bpick"atuin-*.tar.gz" mv"atuin*/atuin -> atuin" \
+    atclone"./atuin init zsh > init.zsh; ./atuin gen-completions --shell zsh > _atuin" \
+    atpull"%atclone" src"init.zsh"
+  zinit light atuinsh/atuin
+else
+  echo "⚠️  Zinit not available yet — skipping plugin loading."
+fi  
 
 # === Xcode Command Line Tools Setup ===
 setup_xcode_clt() {
@@ -154,3 +186,6 @@ alias lh='ls -ld .??*'
 alias ll='ls -lah'
 alias ls='ls -lG'
 alias x='exit'
+
+# === Powerlevel10k Config ===
+[[ -f "$HOME/.p10k.zsh" ]] && source "$HOME/.p10k.zsh"
