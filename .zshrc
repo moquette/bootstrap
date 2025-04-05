@@ -16,18 +16,32 @@ setup_passwordless_sudo() {
 # Pause further execution if Xcode CLT or Homebrew are not yet installed.
 
 # --- Xcode CLT Check ---
+#if ! xcode-select --print-path &>/dev/null || [[ ! -d /Library/Developer/CommandLineTools ]]; then
+#  echo "Xcode Command Line Tools not installed. Installing..."
+#  touch /tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress
+#  PROD=$(softwareupdate -l | grep -o "Label: Command Line Tools for Xcode-[0-9.]*" | sed 's/^Label: //' | head -n1)
+#  if [[ -n "$PROD" ]]; then
+#    softwareupdate -i "$PROD" --verbose
+#    echo "Xcode CLT installation complete. Please restart terminal."
+#  else
+#    echo "Unable to detect Command Line Tools update. Install manually or rerun terminal."
+#  fi
+#  rm -f /tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress
+#  return 0
+#fi
+
+# --- Xcode CLT Check ---
 if ! xcode-select --print-path &>/dev/null || [[ ! -d /Library/Developer/CommandLineTools ]]; then
   echo "Xcode Command Line Tools not installed. Installing..."
   touch /tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress
   PROD=$(softwareupdate -l | grep -o "Label: Command Line Tools for Xcode-[0-9.]*" | sed 's/^Label: //' | head -n1)
   if [[ -n "$PROD" ]]; then
     softwareupdate -i "$PROD" --verbose
-    echo "Xcode CLT installation complete. Please restart terminal."
+    echo "Xcode CLT installation complete. Continuing..."
   else
     echo "Unable to detect Command Line Tools update. Install manually or rerun terminal."
   fi
   rm -f /tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress
-  return 0
 fi
 
 # --- Homebrew Check ---
