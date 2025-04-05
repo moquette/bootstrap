@@ -23,22 +23,14 @@ typeset -g POWERLEVEL9K_INSTANT_PROMPT=quiet
   source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
 
 # === Zinit Setup ===
-ZINIT_HOME="$HOME/.zinit"
-ZINIT_BIN="$ZINIT_HOME/bin"
-ZINIT_ZSH="$ZINIT_BIN/zinit.zsh"
-
-if [[ ! -s "$ZINIT_ZSH" ]]; then
+if [[ ! -s "$HOME/.zinit/bin/zinit.zsh" ]]; then
   echo "📥 Installing Zinit..."
-  mkdir -p "$ZINIT_HOME"
-  git clone --depth=1 https://github.com/zdharma-continuum/zinit "$ZINIT_BIN"
+  mkdir -p "$HOME/.zinit"
+  git clone --depth=1 https://github.com/zdharma-continuum/zinit "$HOME/.zinit/bin"
 fi
 
-if [[ -s "$ZINIT_ZSH" ]]; then
-  source "$ZINIT_ZSH"
-
-  if ! zinit self-update &>/dev/null; then
-    echo "🔧 Zinit will install on next terminal restart..."
-  fi
+if [[ -s "$HOME/.zinit/bin/zinit.zsh" ]]; then
+  source "$HOME/.zinit/bin/zinit.zsh"
 
   # === Plugins ===
   zinit ice wait=0 lucid; zinit light zsh-users/zsh-autosuggestions
@@ -52,7 +44,7 @@ if [[ -s "$ZINIT_ZSH" ]]; then
     atpull"%atclone" src"init.zsh"
   zinit light atuinsh/atuin
 else
-  echo "❌ Zinit failed to install or is missing."
+  echo "⚠️  Zinit not available yet — skipping plugin loading."
 fi
 
 # === Homebrew Setup ===
@@ -83,26 +75,11 @@ if [[ -x "$HOMEBREW_PREFIX/bin/brew" && ! $(grep -F 'brew shellenv' "$HOME/.zpro
   echo 'eval "$('"$HOMEBREW_PREFIX"'/bin/brew shellenv)"' >> "$HOME/.zprofile"
 fi
 
-# === Install Apps ===
+# === Install Visual Studio Code ===
 if ! command -v code &>/dev/null; then
   echo "🔧 Installing Visual Studio Code..."
-  if brew install --cask visual-studio-code; then
-    echo "✅ Visual Studio Code installed successfully."
-  else
-    echo "❌ Failed to install Visual Studio Code."
-  fi
+  brew install --cask visual-studio-code || echo "❌ Failed to install Visual Studio Code."
 fi
-
-if ! command -v gh &>/dev/null; then
-  echo "🔧 Installing GitHub CLI..."
-  if brew install gh; then
-    echo "✅ GitHub CLI installed successfully."
-  else
-    echo "❌ Failed to install GitHub CLI."
-  fi
-fi
-
- echo "💡 Homebrew installed. Please restart terminal to complete bootstrap."
 
 # === Key Bindings ===
 bindkey '^r' atuin-search
