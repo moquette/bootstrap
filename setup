@@ -8,11 +8,10 @@ setup_passwordless_sudo() {
   user=$(whoami)
   file="/etc/sudoers.d/$user"
   rule="$user ALL=(ALL) NOPASSWD: ALL"
-  if [[ ! -f $file ]] || ! sudo grep -qF "$rule" "$file"; then
+  if [[ ! -f "$file" ]] || ! sudo grep -qF "$rule" "$file"; then
     echo "$rule" | sudo tee "$file" >/dev/null && sudo chmod 0440 "$file"
   fi
 }
-setup_passwordless_sudo
 
 # === Xcode CLT Check ===
 install_xcode_clt() {
@@ -30,7 +29,7 @@ install_xcode_clt() {
       grep -E "Command Line Tools for Xcode-($min_version|[1-9][6-9]|[2-9][0-9])" |
       head -n1)
 
-    if [[ -n $label ]]; then
+    if [[ -n "$label" ]]; then
       version=$(echo "$label" | sed -E 's/.*Xcode-([0-9.]+)$/\1/')
       echo "Installing Command Line Tools for Xcode $version..."
       softwareupdate -i "$label" --verbose
@@ -44,51 +43,73 @@ install_xcode_clt() {
   fi
 }
 
-install_xcode_clt
-
 # === Homebrew Setup ===
-case "$(uname -s)-$(uname -m)" in
-  Darwin-arm64) HOMEBREW_PREFIX="/opt/homebrew" ;;
-  Darwin-*)     HOMEBREW_PREFIX="/usr/local" ;;
-  Linux-*)      HOMEBREW_PREFIX="/home/linuxbrew/.linuxbrew" ;;
-  *)            echo "Unsupported OS"; exit 1 ;;
-esac
+install_homebrew() {
+  case "$(uname -s)-$(uname -m)" in
+    Darwin-arm64) HOMEBREW_PREFIX="/opt/homebrew" ;;
+    Darwin-*)     HOMEBREW_PREFIX="/usr/local" ;;
+    Linux-*)      HOMEBREW_PREFIX="/home/linuxbrew/.linuxbrew" ;;
+    *)            echo "Unsupported OS"; exit 1 ;;
+  esac
 
-if [[ ! -x "$HOMEBREW_PREFIX/bin/brew" ]]; then
-  echo "Homebrew not found. Installing..."
-  NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" | tee ~/.homebrew-install.log
+  if [[ ! -x "${HOMEBREW_PREFIX}/bin/brew" ]]; then
+    echo "Homebrew not found. Installing..."
+    NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" | tee ~/.homebrew-install.log
 
-  if [[ -x "$HOMEBREW_PREFIX/bin/brew" ]]; then
-    echo "Writing brew shellenv to .zprofile..."
-    if ! grep -q "# === Homebrew Environment Config ===" "$HOME/.zprofile" 2>/dev/null; then
-      {
-        echo ""
-        echo "# === Silence Atuin shell exit messages ==="
-        echo "export ATUIN_SILENT=true"
-        echo ""
-        echo "# === Homebrew Environment Config ==="
-        echo "export HOMEBREW_NO_ANALYTICS=1"
-        echo "export HOMEBREW_NO_ENV_HINTS=1"
-        echo "eval \"\$($HOMEBREW_PREFIX/bin/brew shellenv)\""
-      } >> "$HOME/.zprofile"
+    if [[ -x "${HOMEBREW_PREFIX}/bin/brew" ]]; then
+      echo "Writing brew shellenv to .zprofile..."
+      if ! grep -q "# === Homebrew Environment Config ===" "$HOME/.zprofile" 2>/dev/null; then
+        {
+          echo "# === Homebrew Environment Config ==="
+          echo "export HOMEBREW_NO_ANALYTICS=1"
+          echo "export HOMEBREW_NO_ENV_HINTS=1"
+          echo "eval \"\$(${HOMEBREW_PREFIX}/bin/brew shellenv)\""
+        } >> "$HOME/.zprofile"
+      fi
+
+      eval "$("${HOMEBREW_PREFIX}/bin/brew" shellenv)"
+      echo "Homebrew installed. Continuing bootstrap..."
+    else
+      echo "Homebrew installation failed. Please retry."
+      exit 1
     fi
-
-    eval "$("$HOMEBREW_PREFIX/bin/brew" shellenv)"
-    echo "Homebrew installed. Continuing bootstrap..."
   else
-    echo "Homebrew installation failed. Please retry."
-    exit 1
+    eval "$("${HOMEBREW_PREFIX}/bin/brew" shellenv)"
   fi
-else
-  eval "$("$HOMEBREW_PREFIX/bin/brew" shellenv)"
-fi
+}
 
 # === Clone repo ===
-git clone https://github.com/moquette/bootstrap.git ~/.bootstrap
+clone_repo() {
+  if ! command -v git &>/dev/null; then
+    echo "Git is not installed. Aborting clone."
+    exit 1
+  fi
 
-if [[ -f ~/.bootstrap/.Brewfile ]]; then
-  brew bundle --file=~/.bootstrap/.Brewfile
-fi
+  if [[ ! -d "$HOME/.bootstrap" ]]; then
+    echo "Cloning bootstrap repo..."
+    git clone https://github.com/moquette/bootstrap.git "$HOME/.bootstrap"
+  else
+    echo "$HOME/.bootstrap already exists. Skipping clone."
+  fi
+}
 
-# === Self delete ===
-[[ -f "$0" ]] && rm -- "$0"
+# === Brewfile install ===
+bundle_apps() {
+  local brewfile="$HOME/.bootstrap/.Brewfile"
+  if [[ -f "$brewfile" ]]; then
+    echo "Installing apps from Brewfile..."
+    brew bundle --file="$brewfile"
+  else
+    echo "No Brewfile found at $brewfile. Skipping."
+  fi
+}
+
+# === Main Script ===
+setup_passwordless_sudo
+install_xcode_clt
+install_homebrew
+clone_repo
+bundle_apps
+
+# === Self destruct ===
+[[ -f "$0" && "$0" != "/dev/fd/"* ]] && rm -- "$0"
