@@ -1,18 +1,12 @@
-# === Path & Environment ===
-export PATH="$HOME/bin:/usr/local/bin:$PATH"
-export EDITOR="vim"
-
 # === Passwordless Sudo Setup ===
 setup_passwordless_sudo() {
-  local u
-  u=$(whoami)
+  local u=$(whoami)
   local f="/etc/sudoers.d/$u"
   local l="$u ALL=(ALL) NOPASSWD: ALL"
   [[ ! -f $f || ! $(sudo grep -qF "$l" "$f") ]] && {
     echo "$l" | sudo tee "$f" >/dev/null && sudo chmod 0440 "$f"
   }
 }
-[[ -z "$POWERLEVEL9K_INSTANT_PROMPT" && $- == *i* ]] && setup_passwordless_sudo
 
 # === Ensure .p10k.zsh is present ===
 if [[ ! -f "$HOME/.p10k.zsh" ]]; then
@@ -20,40 +14,13 @@ if [[ ! -f "$HOME/.p10k.zsh" ]]; then
   chmod 644 "$HOME/.p10k.zsh"
 fi
 
+# === Only apply sudo setup in interactive shell and after .p10k.zsh check ===
+[[ -z "$POWERLEVEL9K_INSTANT_PROMPT" && $- == *i* ]] && setup_passwordless_sudo
+
 # === Powerlevel10k Instant Prompt ===
 typeset -g POWERLEVEL9K_INSTANT_PROMPT=quiet
 [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]] &&
   source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
-
-# === Homebrew Setup ===
-case "$(uname -s)-$(uname -m)" in
-  Darwin-arm64) HOMEBREW_PREFIX="/opt/homebrew" ;;
-  Darwin-*)     HOMEBREW_PREFIX="/usr/local" ;;
-  Linux-*)      HOMEBREW_PREFIX="/home/linuxbrew/.linuxbrew" ;;
-  *)            echo "❌ Unsupported OS"; return 1 ;;
-esac
-
-HOMEBREW_INSTALLED=0
-if [[ ! -x "$HOMEBREW_PREFIX/bin/brew" ]]; then
-  echo "🔧 Installing Homebrew..."
-  NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" 2>&1 | tee ~/.homebrew-install.log
-  if [[ -x "$HOMEBREW_PREFIX/bin/brew" ]]; then
-    HOMEBREW_INSTALLED=1
-    echo 'eval "$('"$HOMEBREW_PREFIX"'/bin/brew shellenv)"' >> "$HOME/.zprofile"
-    eval "$("$HOMEBREW_PREFIX/bin/brew" shellenv)"
-  else
-    echo "❌ Homebrew install failed."
-    return
-  fi
-else
-  eval "$("$HOMEBREW_PREFIX/bin/brew" shellenv)"
-fi
-
-# === Early exit if Homebrew just installed ===
-if [[ "$HOMEBREW_INSTALLED" == 1 ]]; then
-  echo "💡 Homebrew installed. Please restart terminal to complete bootstrap."
-  return
-fi
 
 # === Zinit Setup ===
 ZINIT_HOME="$HOME/.zinit"
@@ -64,34 +31,89 @@ if [[ ! -s "$ZINIT_ZSH" ]]; then
   echo "📥 Installing Zinit..."
   mkdir -p "$ZINIT_HOME"
   git clone --depth=1 https://github.com/zdharma-continuum/zinit "$ZINIT_BIN"
-  echo "💡 Zinit installed. Please restart terminal to continue setup."
-  return
 fi
 
-# === Load Zinit + Plugins ===
-source "$ZINIT_ZSH"
-zinit self-update &>/dev/null
+if [[ -s "$ZINIT_ZSH" ]]; then
+  source "$ZINIT_ZSH"
 
-# === Plugins ===
-zinit ice wait=0 lucid; zinit light zsh-users/zsh-autosuggestions
-zinit ice wait=0 lucid; zinit light zsh-users/zsh-syntax-highlighting
-zinit ice wait=0 lucid; zinit light zsh-users/zsh-completions
-zinit ice depth=1; zinit light romkatv/powerlevel10k
+  if ! zinit self-update &>/dev/null; then
+    echo "⚠️  Zinit failed to update or run correctly."
+  fi
 
-# === Atuin Setup ===
-zinit ice as"command" from"gh-r" bpick"atuin-*.tar.gz" mv"atuin*/atuin -> atuin" \
-  atclone="./atuin init zsh > init.zsh; ./atuin gen-completions --shell zsh > _atuin" \
-  atpull="%atclone" src="init.zsh"
-zinit light atuinsh/atuin
+  # === Plugins ===
+  zinit ice wait=0 lucid; zinit light zsh-users/zsh-autosuggestions
+  zinit ice wait=0 lucid; zinit light zsh-users/zsh-syntax-highlighting
+  zinit ice wait=0 lucid; zinit light zsh-users/zsh-completions
+  zinit ice depth=1; zinit light romkatv/powerlevel10k
 
-# === Completion ===
-autoload -U compinit; compinit -u
-zinit cdreplay -q
+  # === Atuin Setup ===
+  zinit ice as"command" from"gh-r" bpick"atuin-*.tar.gz" mv"atuin*/atuin -> atuin" \
+    atclone"./atuin init zsh > init.zsh; ./atuin gen-completions --shell zsh > _atuin" \
+    atpull"%atclone" src"init.zsh"
+  zinit light atuinsh/atuin
+else
+  echo "❌ Zinit failed to install or is missing."
+fi
+
+# === Homebrew Setup ===
+case "$(uname -s)-$(uname -m)" in
+  Darwin-arm64) HOMEBREW_PREFIX="/opt/homebrew" ;;
+  Darwin-*)     HOMEBREW_PREFIX="/usr/local" ;;
+  Linux-*)      HOMEBREW_PREFIX="/home/linuxbrew/.linuxbrew" ;;
+  *)            echo "❌ Unsupported OS"; return 1 ;;
+esac
+
+if [[ -x "$HOMEBREW_PREFIX/bin/brew" ]]; then
+  eval "$("$HOMEBREW_PREFIX/bin/brew" shellenv)"
+else
+  if [[ $- == *i* ]]; then
+    echo "🔧 Installing Homebrew..."
+    NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" 2>&1 | tee ~/.homebrew-install.log
+
+    if [[ -x "$HOMEBREW_PREFIX/bin/brew" ]]; then
+      eval "$("$HOMEBREW_PREFIX/bin/brew" shellenv)"
+    else
+      echo "❌ Homebrew install failed."
+    fi
+  fi
+fi
+
+# === Persist Homebrew shellenv to ~/.zprofile ===
+if [[ -x "$HOMEBREW_PREFIX/bin/brew" && ! $(grep -F 'brew shellenv' "$HOME/.zprofile" 2>/dev/null) ]]; then
+  echo 'eval "$('"$HOMEBREW_PREFIX"'/bin/brew shellenv)"' >> "$HOME/.zprofile"
+fi
+
+# === Install Applications ===
+install_or_report() {
+  local cmd="$1" pkg="$2" type="$3"
+  if ! command -v "$cmd" &>/dev/null; then
+    echo "🔧 Installing $pkg..."
+    if [[ "$type" == "cask" ]]; then
+      brew install --cask "$pkg"
+    else
+      brew install "$pkg"
+    fi && echo "✅ $pkg installed successfully." || echo "❌ Failed to install $pkg."
+  else
+    echo "✅ $pkg already installed."
+  fi
+}
+
+# === App Bindings ===
+install_or_report "code" "visual-studio-code" "cask"
+install_or_report "gh" "gh" "formula"
+
+# === Intermission ===
+ echo "💡 Homebrew/Apps installed. Please restart terminal to complete bootstrap."
+
 
 # === Key Bindings ===
 bindkey '^r' atuin-search
 bindkey '^[[A' atuin-up-search
 bindkey '^[OA' atuin-up-search
+
+# === Completion ===
+autoload -U compinit; compinit -u
+[[ -n "$(command -v zinit)" ]] && zinit cdreplay -q
 
 # === Shell Settings ===
 HISTSIZE=10000
@@ -106,8 +128,14 @@ alias ll='ls -lah'
 alias ls='ls -lG'
 alias x='exit'
 
+# === Environment Variables ===
+export EDITOR='vim'
+export PATH="$HOME/bin:/usr/local/bin:$PATH"
+
 # === Powerlevel10k Config ===
 [[ -f "$HOME/.p10k.zsh" ]] && source "$HOME/.p10k.zsh"
 
 # === Silence Login Message ===
-[[ $- == *i* && ! -f "$HOME/.hushlogin" ]] && touch "$HOME/.hushlogin" 2>/dev/null
+if [[ $- == *i* && ! -f "$HOME/.hushlogin" ]]; then
+  touch "$HOME/.hushlogin" 2>/dev/null
+fi
