@@ -15,7 +15,7 @@ setup_passwordless_sudo() {
 
 # === Xcode Command Line Tools Setup ===
 setup_xcode_clt() {
-  if ! xcode-select --print-path &>/dev/null; then
+  if ! xcode-select --print-path &>/dev/null || [[ ! -d /Library/Developer/CommandLineTools ]]; then
     echo "Installing Xcode Command Line Tools..."
     touch /tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress
 
@@ -31,8 +31,6 @@ setup_xcode_clt() {
     fi
 
     rm -f /tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress
-  else
-    echo "Xcode Command Line Tools are already installed."
   fi
 }
 
@@ -98,8 +96,8 @@ else
     NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" | tee ~/.homebrew-install.log
 
     if [[ -x "$HOMEBREW_PREFIX/bin/brew" ]]; then
-      eval "$("$HOMEBREW_PREFIX/bin/brew" shellenv)"
       echo 'eval "$('"$HOMEBREW_PREFIX"'/bin/brew shellenv)"' >"$HOME/.zprofile"
+      eval "$("$HOMEBREW_PREFIX/bin/brew" shellenv)"
     else
       echo "Homebrew install failed."
     fi
