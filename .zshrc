@@ -13,7 +13,8 @@ setup_passwordless_sudo() {
 # === Run Passwordless Sudo Setup (interactive only) ===
 [[ $- == *i* ]] && setup_passwordless_sudo
 
-# === Xcode Command Line Tools Setup ===setup_xcode_clt() {
+# === Xcode Command Line Tools Setup ===
+setup_xcode_clt() {
   local min_version="16.0"
   local label
   local version
