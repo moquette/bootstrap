@@ -53,25 +53,26 @@ case "$(uname -s)-$(uname -m)" in
   *)            echo "Unsupported OS"; return 1 ;;
 esac
 
-if ! command -v brew &>/dev/null; then
+if [[ ! -x "$HOMEBREW_PREFIX/bin/brew" ]]; then
   echo "Homebrew not found. Installing..."
   NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" | tee ~/.homebrew-install.log
 
-  if ! command -v brew &>/dev/null; then
-    echo "Homebrew installation failed. Please retry."
-  else
+  if [[ -x "$HOMEBREW_PREFIX/bin/brew" ]]; then
+    echo "Writing brew shellenv to .zprofile..."
+    grep -q 'brew shellenv' "$HOME/.zprofile" 2>/dev/null || {
+      {
+        echo ""
+        echo "# === Homebrew Environment Config ==="
+        echo "export HOMEBREW_NO_ANALYTICS=1"
+        echo "export HOMEBREW_NO_ENV_HINTS=1"
+        echo "eval \"\$($HOMEBREW_PREFIX/bin/brew shellenv)\""
+      } >> "$HOME/.zprofile"
+    }
+
     eval "$("$HOMEBREW_PREFIX/bin/brew" shellenv)"
-    {
-      echo ""
-      echo "# === Homebrew Environment Config ==="
-      echo "export HOMEBREW_NO_ANALYTICS=1"
-      echo "export HOMEBREW_NO_ENV_HINTS=1"
-      echo ""
-      echo "if command -v brew &>/dev/null; then"
-      echo "  eval \"\$($HOMEBREW_PREFIX/bin/brew shellenv)\""
-      echo "fi"
-    } >> "$HOME/.zprofile"
     echo "Homebrew installed. Continuing bootstrap..."
+  else
+    echo "Homebrew installation failed. Please retry."
   fi
 else
   eval "$("$HOMEBREW_PREFIX/bin/brew" shellenv)"
