@@ -140,3 +140,7 @@ brewfile_install
 
 # === Self destruct ===
 [[ -f "$0" && "$0" != "/dev/fd/"* ]] && rm -- "$0"
+
+# === Refresh shell ===
+echo "Reloading shell..."
+clear && exec zsh
