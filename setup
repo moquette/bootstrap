@@ -99,7 +99,15 @@ symlink_dotfiles() {
 
   find "$HOME/.bootstrap" -type f -name "*.symlink" | while read -r source; do
     filename=$(basename "$source")
-    target="$HOME/.${filename%.symlink}"
+    base="${filename%.symlink}"
+
+    # Skip Brewfile.symlink
+    if [[ "$base" == "Brewfile" ]]; then
+      echo "Skipping $filename (not meant to be linked)"
+      continue
+    fi
+
+    target="$HOME/.${base}"
 
     if [[ -L "$target" || -f "$target" || -d "$target" ]]; then
       echo "Removing existing file: $target"
@@ -113,7 +121,7 @@ symlink_dotfiles() {
 
 # === Brewfile install ===
 brewfile_install() {
-  local brewfile="$HOME/.Brewfile"
+  local brewfile="$HOME/.bootstrap/Brewfile"
   if [[ -f "$brewfile" ]]; then
     echo "Installing apps from Brewfile..."
     brew bundle --file="$brewfile"
