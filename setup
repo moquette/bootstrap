@@ -84,7 +84,11 @@ else
 fi
 
 # === Clone repo ===
-git clone https://github.com/moquette/bootrap.git ~/.bootstrap
+git clone https://github.com/moquette/bootstrap.git ~/.bootstrap
+
+if [[ -f ~/.bootstrap/.Brewfile ]]; then
+  brew bundle --file=~/.bootstrap/.Brewfile
+fi
 
 # === Self delete ===
 [[ -f "$0" ]] && rm -- "$0"
