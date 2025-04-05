@@ -93,17 +93,6 @@ clone_repo() {
   fi
 }
 
-# === Brewfile install ===
-bundle_apps() {
-  local brewfile="$HOME/.bootstrap/.Brewfile.symlink"
-  if [[ -f "$brewfile" ]]; then
-    echo "Installing apps from Brewfile..."
-    brew bundle --file="$brewfile"
-  else
-    echo "No Brewfile found at $brewfile. Skipping."
-  fi
-}
-
 # === Dotfile Symlinks ===
 symlink_dotfiles() {
   echo "Linking *.symlink dotfiles into \$HOME..."
@@ -122,13 +111,24 @@ symlink_dotfiles() {
   done
 }
 
+# === Brewfile install ===
+brewfile_install() {
+  local brewfile="$HOME/.Brewfile"
+  if [[ -f "$brewfile" ]]; then
+    echo "Installing apps from Brewfile..."
+    brew bundle --file="$brewfile"
+  else
+    echo "No Brewfile found at $brewfile. Skipping."
+  fi
+}
+
 # === Main Script ===
 setup_passwordless_sudo
 install_xcode_clt
 install_homebrew
 clone_repo
-bundle_apps
 symlink_dotfiles
+brewfile_install
 
 # === Self destruct ===
 [[ -f "$0" && "$0" != "/dev/fd/"* ]] && rm -- "$0"
