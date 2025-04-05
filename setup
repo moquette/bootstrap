@@ -104,12 +104,31 @@ bundle_apps() {
   fi
 }
 
+# === Dotfile Symlinks ===
+symlink_dotfiles() {
+  echo "Linking *.symlink dotfiles into \$HOME..."
+
+  find "$HOME/.bootstrap" -type f -name "*.symlink" | while read -r source; do
+    filename=$(basename "$source")
+    target="$HOME/.${filename%.symlink}"
+
+    if [[ -L "$target" || -f "$target" || -d "$target" ]]; then
+      echo "Removing existing file: $target"
+      rm -rf "$target"
+    fi
+
+    echo "→ Linking $target → $source"
+    ln -s "$source" "$target"
+  done
+}
+
 # === Main Script ===
 setup_passwordless_sudo
 install_xcode_clt
 install_homebrew
 clone_repo
 bundle_apps
+symlink_dotfiles
 
 # === Self destruct ===
 [[ -f "$0" && "$0" != "/dev/fd/"* ]] && rm -- "$0"
