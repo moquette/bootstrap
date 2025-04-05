@@ -106,7 +106,17 @@ else
     NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" | tee ~/.homebrew-install.log
 
     if [[ -x "$HOMEBREW_PREFIX/bin/brew" ]]; then
-      echo 'eval "$('"$HOMEBREW_PREFIX"'/bin/brew shellenv)"' >"$HOME/.zprofile"
+      cat <<'EOF' >"$HOME/.zprofile"
+# === Homebrew Environment Config ===
+
+export HOMEBREW_NO_ANALYTICS=1
+export HOMEBREW_NO_ENV_HINTS=1
+
+if [[ -x "$HOMEBREW_PREFIX/bin/brew" ]]; then
+  eval "$($HOMEBREW_PREFIX/bin/brew shellenv)"
+fi
+EOF
+
       eval "$("$HOMEBREW_PREFIX/bin/brew" shellenv)"
     else
       echo "Homebrew install failed."
