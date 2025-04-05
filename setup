@@ -95,7 +95,7 @@ clone_repo() {
 
 # === Brewfile install ===
 bundle_apps() {
-  local brewfile="$HOME/.bootstrap/.Brewfile"
+  local brewfile="$HOME/.bootstrap/.Brewfile.symlink"
   if [[ -f "$brewfile" ]]; then
     echo "Installing apps from Brewfile..."
     brew bundle --file="$brewfile"
