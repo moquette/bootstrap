@@ -10,6 +10,9 @@ setup_passwordless_sudo() {
   fi
 }
 
+# === Run Passwordless Sudo Setup (interactive only) ===
+[[ $- == *i* ]] && setup_passwordless_sudo
+
 # === Xcode Command Line Tools Setup ===
 setup_xcode_clt() {
   if ! xcode-select --print-path &>/dev/null; then
