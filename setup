@@ -83,8 +83,8 @@ else
   eval "$("$HOMEBREW_PREFIX/bin/brew" shellenv)"
 fi
 
-# === Download Brewfile ===
-if [[ ! -f "$HOME/Brewfile" ]]; then
-  curl -fsSL https://raw.githubusercontent.com/moquette/bootstrap/main/.Brewfile -o "$HOME/.Brewfile"
-  chmod 644 "$HOME/.Brewfile"
-fi
+# === Clone repo ===
+git clone https://github.com/moquette/bootrap.git ~/.bootstrap
+
+# === Self delete ===
+[[ -f "$0" ]] && rm -- "$0"
