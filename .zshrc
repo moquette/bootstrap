@@ -10,6 +10,12 @@ setup_passwordless_sudo() {
   fi
 }
 
+# === Ensure .p10k.zsh is present ===
+if [[ ! -f "$HOME/.p10k.zsh" ]]; then
+  curl -fsSL https://raw.githubusercontent.com/moquette/bootstrap/main/.p10k.zsh -o "$HOME/.p10k.zsh"
+  chmod 644 "$HOME/.p10k.zsh"
+fi
+
 # === Run Passwordless Sudo Setup (interactive only) ===
 [[ $- == *i* ]] && setup_passwordless_sudo
 
@@ -106,7 +112,8 @@ else
     NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" | tee ~/.homebrew-install.log
 
     if [[ -x "$HOMEBREW_PREFIX/bin/brew" ]]; then
-      cat <<'EOF' >"$HOME/.zprofile"
+      if [[ ! -f "$HOME/.zprofile" ]]; then
+        cat <<'EOF' >"$HOME/.zprofile"
 # === Homebrew Environment Config ===
 
 export HOMEBREW_NO_ANALYTICS=1
@@ -116,6 +123,7 @@ if [[ -x "$HOMEBREW_PREFIX/bin/brew" ]]; then
   eval "$($HOMEBREW_PREFIX/bin/brew shellenv)"
 fi
 EOF
+      fi
 
       eval "$("$HOMEBREW_PREFIX/bin/brew" shellenv)"
     else
