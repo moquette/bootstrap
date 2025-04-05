@@ -1,0 +1,76 @@
+# === Editor and Path ===
+export EDITOR="vim"
+export PATH="$HOME/bin:/usr/local/bin:$PATH"
+
+# === Homebrew Path ===
+if [[ -d "/opt/homebrew/bin" ]]; then
+  export PATH="/opt/homebrew/bin:$PATH"
+  export HOMEBREW_NO_ANALYTICS=1
+  export HOMEBREW_NO_ENV_HINTS=1
+fi
+
+# === History ===
+HISTSIZE=10000
+SAVEHIST=10000
+HISTFILE="$HOME/.zsh_history"
+setopt HIST_IGNORE_DUPS HIST_IGNORE_SPACE
+
+# === Completion ===
+autoload -U compinit && compinit -u
+autoload -Uz bashcompinit && bashcompinit
+
+# === Key Bindings for Atuin ===
+bindkey '^r' atuin-search
+bindkey '^[[A' atuin-up-search
+bindkey '^[OA' atuin-up-search
+
+# === Aliases ===
+alias c='clear'
+alias lh='ls -ld .??*'
+alias ll='ls -lah'
+alias ls='ls -lG'
+alias lns='find . -type l'
+alias r='source ~/.zshrc'
+alias x='exit'
+alias gs='git status'
+alias ga='git add .'
+alias gc='git commit -v'
+alias gl='git pull'
+alias gp='git push'
+alias ..='cd ..'
+alias ...='cd ../..'
+
+# === Atuin (auto-init) ===
+if command -v atuin &>/dev/null; then
+  eval "$(atuin init zsh)"
+fi
+
+# === FZF ===
+if [[ -f ~/.fzf.zsh ]]; then
+  source ~/.fzf.zsh
+fi
+
+# === Custom Prompt ===
+autoload -Uz colors && colors
+setopt PROMPT_SUBST
+
+PROMPT='%{$fg[cyan]%}%n@%m %{$fg[green]%}%~%{$reset_color%} %# '
+RPROMPT='%{$fg[magenta]%}$(git_prompt_info)%{$reset_color%}'
+
+git_prompt_info() {
+  if git rev-parse --is-inside-work-tree &>/dev/null; then
+    local branch
+    branch=$(git symbolic-ref --short HEAD 2>/dev/null || git rev-parse --short HEAD 2>/dev/null)
+    echo "🌱 $branch"
+  fi
+}
+
+# === Zinit (optional plugin manager) ===
+if [[ -s "${XDG_DATA_HOME:-$HOME/.local/share}/zinit/zinit.git/zinit.zsh" ]]; then
+  source "${XDG_DATA_HOME:-$HOME/.local/share}/zinit/zinit.git/zinit.zsh"
+  zinit light zsh-users/zsh-autosuggestions
+  zinit light zsh-users/zsh-syntax-highlighting
+fi
+
+# === Custom Scripts ===
+[[ -d "$HOME/.dotfiles/scripts" ]] && export PATH="$HOME/.dotfiles/scripts:$PATH"
