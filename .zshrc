@@ -83,11 +83,26 @@ if [[ -x "$HOMEBREW_PREFIX/bin/brew" && ! $(grep -F 'brew shellenv' "$HOME/.zpro
   echo 'eval "$('"$HOMEBREW_PREFIX"'/bin/brew shellenv)"' >> "$HOME/.zprofile"
 fi
 
-# === Install Visual Studio Code ===
+# === Install Apps ===
 if ! command -v code &>/dev/null; then
   echo "🔧 Installing Visual Studio Code..."
-  brew install --cask visual-studio-code || echo "❌ Failed to install Visual Studio Code."
+  if brew install --cask visual-studio-code; then
+    echo "✅ Visual Studio Code installed successfully."
+  else
+    echo "❌ Failed to install Visual Studio Code."
+  fi
 fi
+
+if ! command -v gh &>/dev/null; then
+  echo "🔧 Installing GitHub CLI..."
+  if brew install gh; then
+    echo "✅ GitHub CLI installed successfully."
+  else
+    echo "❌ Failed to install GitHub CLI."
+  fi
+fi
+
+ echo "💡 Homebrew installed. Please restart terminal to complete bootstrap."
 
 # === Key Bindings ===
 bindkey '^r' atuin-search
