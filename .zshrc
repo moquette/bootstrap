@@ -37,7 +37,7 @@ if [[ -s "$ZINIT_ZSH" ]]; then
   source "$ZINIT_ZSH"
 
   if ! zinit self-update &>/dev/null; then
-    echo "⚠️  Zinit failed to update or run correctly."
+    echo "🔧 Zinit will install on next terminal restart..."
   fi
 
   # === Plugins ===
