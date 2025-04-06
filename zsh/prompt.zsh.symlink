@@ -29,11 +29,24 @@ git_prompt_info() {
 # Load Zsh colors
 autoload -Uz colors && colors
 
-# Enable prompt substitution (to evaluate functions/vars in prompt)
+# Enable prompt substitution
 setopt PROMPT_SUBST
 
-# Define a multi-line prompt (Git info above, input cursor below)
-PROMPT="%{$fg[cyan]%}%n@%m %{$fg[green]%}%~%{$reset_color%} \$(git_prompt_info)\n❯ "
+# Initialize the prompt symbol (will be updated by precmd)
+PROMPT_SYMBOL="%{$fg[white]%}❯%{$reset_color%}"
 
-# Disable right prompt for cleaner layout
+# Dynamically update ❯ color based on last command status
+precmd() {
+  if [[ $? -ne 0 ]]; then
+    PROMPT_SYMBOL="%{$fg[red]%}❯%{$reset_color%}"
+  else
+    PROMPT_SYMBOL="%{$fg[white]%}❯%{$reset_color%}"
+  fi
+}
+
+# Define the final prompt layout
+PROMPT='%{$fg[cyan]%}%n@%m %{$fg[green]%}%~%{$reset_color%} $(git_prompt_info)
+${PROMPT_SYMBOL} '
+
+# Disable right prompt
 RPROMPT=''
