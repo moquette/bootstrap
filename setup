@@ -142,4 +142,4 @@ brewfile_install
 [[ -f "$0" && "$0" != "/dev/fd/"* ]] && rm -- "$0"
 
 # === Refresh shell ===
-echo "Bootstrap complete. Pleaae restart terminal."
+echo "Bootstrap complete. Please restart terminal."

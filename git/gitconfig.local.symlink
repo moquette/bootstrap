@@ -1,0 +1,9 @@
+[user]
+        name = Joaquin A. Moquette
+        email = moquette@gmail.com
+
+[credential]
+        helper = osxkeychain
+
+[credential "https://github.com"]
+        username = moquette

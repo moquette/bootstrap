@@ -1,6 +1,6 @@
 # === Editor and Path ===
 export EDITOR="vim"
-export PATH="$HOME/bin:/usr/local/bin:$PATH"
+export PATH="$HOME/.tools:/usr/local/bin:$PATH"
 
 # === Homebrew Path ===
 if [[ -d "/opt/homebrew/bin" ]]; then
@@ -52,19 +52,7 @@ if [[ -f ~/.fzf.zsh ]]; then
 fi
 
 # === Custom Prompt ===
-autoload -Uz colors && colors
-setopt PROMPT_SUBST
-
-PROMPT='%{$fg[cyan]%}%n@%m %{$fg[green]%}%~%{$reset_color%} %# '
-RPROMPT='%{$fg[magenta]%}$(git_prompt_info)%{$reset_color%}'
-
-git_prompt_info() {
-  if git rev-parse --is-inside-work-tree &>/dev/null; then
-    local branch
-    branch=$(git symbolic-ref --short HEAD 2>/dev/null || git rev-parse --short HEAD 2>/dev/null)
-    echo "🌱 $branch"
-  fi
-}
+[[ -f ~/.prompt.zsh ]] && source ~/.prompt.zsh
 
 # === Zinit (optional plugin manager) ===
 if [[ -s "${XDG_DATA_HOME:-$HOME/.local/share}/zinit/zinit.git/zinit.zsh" ]]; then

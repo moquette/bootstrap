@@ -1,0 +1,21 @@
+[*]
+end_of_line = lf
+insert_final_newline = true
+indent_style = space
+indent_size = 2
+
+[*.md]
+trim_trailing_whitespace = false   # Allow trailing whitespace in markdown
+
+[*.json]
+indent_size = 2
+
+[*.yml]
+indent_size = 2
+
+[*.sh]
+charset = utf-8
+trim_trailing_whitespace = true
+
+[*.{ts,tsx,js,jsx}]
+indent_size = 2
