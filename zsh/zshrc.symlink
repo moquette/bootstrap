@@ -1,3 +1,5 @@
+# ~/.dotfiles/zsh/zshrc.symlink
+
 # === Editor and Path ===
 export EDITOR="vim"
 export PATH="$HOME/.tools/usr/local/bin:$PATH"

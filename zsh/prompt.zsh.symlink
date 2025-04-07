@@ -1,3 +1,5 @@
+# ~/.dotfiles/zsh/prompt.zsh.symlink
+
 # === Custom Prompt ===
 
 # Git branch, sync status, and dirty flag helper function
