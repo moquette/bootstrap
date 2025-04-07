@@ -46,6 +46,37 @@ cd ${HOME}/.dotfiles
 
 Edit the `config.sh` file to customize your installation preferences.
 
+## Error Handling
+
+This bootstrap system implements intelligent error handling that adapts to your shell context:
+
+- **Non-interactive shells (scripts)**: Strict error handling is enforced with `set -euo pipefail`, which causes scripts to exit immediately if any command fails, any unset variable is referenced, or any command in a pipeline fails.
+
+- **Interactive shells (terminal sessions)**: A more forgiving approach is used where errors are logged without closing your terminal. Instead, a trap is set to display error messages with line numbers.
+
+This dual approach ensures that:
+
+1. Scripts fail fast and visibly when something goes wrong (preventing cascading errors)
+2. Your terminal sessions remain stable even when commands fail
+
+### Customizing Error Behavior
+
+If you want to modify the error handling behavior:
+
+1. Edit the `config.sh` file to change the trap behavior for interactive shells:
+
+   ```bash
+   # Default trap (shows error line number)
+   trap 'echo "An error occurred on line $LINENO." >&2' ERR
+
+   # Example of a more detailed trap
+   trap 'echo "Error on line $LINENO: Command \"$BASH_COMMAND\" exited with status $?" >&2' ERR
+   ```
+
+2. To disable error trapping completely in interactive shells, comment out or remove the trap line.
+
+3. For non-interactive shells, you can modify the strict mode options in the `set -euo pipefail` line.
+
 ## License
 
 MIT

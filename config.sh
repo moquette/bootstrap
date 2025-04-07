@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
-set -euo pipefail
+# Apply strict error handling in non-interactive mode only
+if [[ $- != *i* ]]; then
+  set -euo pipefail
+else
+  # Optionally, set a trap for ERR to log errors without exiting in interactive shells
+  trap 'echo "An error occurred on line $LINENO." >&2' ERR
+fi
 
 # Central configuration for dotfiles directory. 
 # Use existing DOTFILES_DIR if set, 
