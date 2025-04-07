@@ -182,13 +182,13 @@ brewfile_install() {
 }
 
 # === Main Script ===
-#setup_passwordless_sudo
+setup_passwordless_sudo
 #install_xcode_clt
 #install_homebrew
 clone_repo
 symlink_dotfiles
 symlink_ssh_dir
-brewfile_install
+#brewfile_install
 
 # === Clean up temporary config.sh file ===
 if [ -z "${KEEP_CONFIG_SH:-}" ]; then
