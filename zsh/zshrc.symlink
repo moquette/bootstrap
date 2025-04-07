@@ -1,6 +1,7 @@
 # === Editor and Path ===
 export EDITOR="vim"
-export PATH="$HOME/.tools:/usr/local/bin:$PATH"
+export PATH="$HOME/.tools/usr/local/bin:$PATH"
+[ -d "$HOME/.dotfiles/bin" ] && export PATH="$HOME/.dotfiles/bin:$PATH"
 
 # === Homebrew Path ===
 if [[ -d "/opt/homebrew/bin" ]]; then
