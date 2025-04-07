@@ -48,24 +48,32 @@ sync_repo() {
   print_section "Syncing dotfiles and local repositories"
 
   DOTFILES_DIR="$HOME/.dotfiles"
-  DOTLOCAL_DIR="/Users/moquette/Library/Mobile Documents/com~apple~CloudDocs/Dotfiles/Dotlocal"
+  DOTLOCAL_DIR="$HOME/Library/Mobile Documents/com~apple~CloudDocs/Dotfiles/Dotlocal"
 
   # Sync .dotfiles repo
   echo "[..] Syncing .dotfiles repository..."
-  if git -C "$DOTFILES_DIR" diff --quiet && git -C "$DOTFILES_DIR" diff --cached --quiet; then
-    git -C "$DOTFILES_DIR" pull --rebase
-    echo "[✔] .dotfiles synced"
+  if [ -d "$DOTFILES_DIR" ]; then
+    if git -C "$DOTFILES_DIR" diff --quiet && git -C "$DOTFILES_DIR" diff --cached --quiet; then
+      git -C "$DOTFILES_DIR" pull --rebase
+      echo "[✔] .dotfiles synced"
+    else
+      echo "[${RED}✗${RESET}] Skipping .dotfiles pull — you have uncommitted changes"
+    fi
   else
-    echo "[${RED}✗${RESET}] Skipping .dotfiles pull — you have uncommitted changes"
+    echo "[${RED}✗${RESET}] Skipping .dotfiles — directory not found: $DOTFILES_DIR"
   fi
 
   # Sync .dotlocal repo
   echo "[..] Syncing .dotlocal repository..."
-  if git -C "$DOTLOCAL_DIR" diff --quiet && git -C "$DOTLOCAL_DIR" diff --cached --quiet; then
-    git -C "$DOTLOCAL_DIR" pull --rebase
-    echo "[✔] .dotlocal synced"
+  if [ -d "$DOTLOCAL_DIR" ]; then
+    if git -C "$DOTLOCAL_DIR" diff --quiet && git -C "$DOTLOCAL_DIR" diff --cached --quiet; then
+      git -C "$DOTLOCAL_DIR" pull --rebase
+      echo "[✔] .dotlocal synced"
+    else
+      echo "[${RED}✗${RESET}] Skipping .dotlocal pull — you have uncommitted changes"
+    fi
   else
-    echo "[${RED}✗${RESET}] Skipping .dotlocal pull — you have uncommitted changes"
+    echo "[${RED}✗${RESET}] Skipping .dotlocal — directory not found: $DOTLOCAL_DIR"
   fi
 }
 
@@ -84,7 +92,7 @@ if ! command -v brew >/dev/null 2>&1; then
   exit 1
 fi
 
-run_task "Updateing repo" sync_repo
+run_task "Syncing dotfiles and local repositories" sync_repo
 run_task "Homebrew update" brew update
 run_task "Homebrew upgrade" brew upgrade
 run_task "Homebrew autoremove" brew autoremove
