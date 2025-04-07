@@ -40,7 +40,7 @@ PROMPT_SYMBOL="%{$fg[white]%}❯%{$reset_color%}"
 # Dynamically update ❯ color based on last command status
 precmd() {
   # Check if this is the first time the prompt is being displayed
-  if [[ -z $INITIAL_PROMPT_SHOWN ]]; then
+  if [[ -z ${INITIAL_PROMPT_SHOWN:-} ]]; then
     PROMPT_SYMBOL="%{$fg[white]%}❯%{$reset_color%}"
     INITIAL_PROMPT_SHOWN=1
     return
