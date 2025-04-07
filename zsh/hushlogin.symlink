@@ -1,1 +1,7 @@
-# hushlogin
+# ~/.dotfiles/zsh/hushlogin.symlink
+
+# This file keeps my terminal login clean.
+# Silence is golden.
+# 🌙 Quiet logins only.
+# No MOTD, no distractions.
+# Created by dots, managed with love.
