@@ -20,9 +20,9 @@ autoload -U compinit && compinit -u
 autoload -Uz bashcompinit && bashcompinit
 
 # === Key Bindings for Atuin ===
-bindkey '^r' atuin-search
-bindkey '^[[A' atuin-up-search
-bindkey '^[OA' atuin-up-search
+# bindkey '^r' atuin-search
+# bindkey '^[[A' atuin-up-search
+# bindkey '^[OA' atuin-up-search
 
 # === Aliases ===
 alias bundle='brew bundle --file=~/.bootstrap/Brewfile'
