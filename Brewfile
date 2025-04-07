@@ -1,5 +1,5 @@
 brew 'coreutils'
-brew 'gh'
+# brew 'gh'
 # brew 'starship'
 
 cask_args appdir: '/Applications'
