@@ -1,16 +1,22 @@
 # === Aliases ===
+
+# System & utilities
 alias bundle='brew bundle --file=~/.bootstrap/Brewfile'
 alias c='clear'
+alias lns='find . -type l'
+alias ls='ls -lG'
 alias lh='ls -ld .??*'
 alias ll='ls -lah'
-alias ls='ls -lG'
-alias lns='find . -type l'
 alias r='source ~/.zshrc'
 alias x='exit'
-alias gs='git status'
+
+# Navigation
+alias ..='cd ..'
+alias ...='cd ../..'
+
+# Git
 alias ga='git add .'
 alias gc='git commit -v'
 alias gl='git pull'
 alias gp='git push'
-alias ..='cd ..'
-alias ...='cd ../..'
+alias gs='git status'

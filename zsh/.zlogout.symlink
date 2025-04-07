@@ -1,0 +1,2 @@
+# ~/.zlogout
+exec 2>/dev/null

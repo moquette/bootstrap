@@ -11,10 +11,7 @@ if [[ -d "/opt/homebrew/bin" ]]; then
 fi
 
 # === History ===
-HISTSIZE=10000
-SAVEHIST=10000
-HISTFILE="$HOME/.zsh_history"
-setopt HIST_IGNORE_DUPS HIST_IGNORE_SPACE
+[[ -f ~/.dotfiles/zsh/zsh_history.zsh ]] && source ~/.dotfiles/zsh/zsh_history.zsh
 
 # === Completion ===
 autoload -U compinit && compinit -u
@@ -26,7 +23,7 @@ autoload -Uz bashcompinit && bashcompinit
 # bindkey '^[OA' atuin-up-search
 
 # === Aliases ===
-[[ -f ~/.dotfiles/zsh/zsh_aliases.zsh ]] && source ~/.dotfiles/zsh/zsh_aliases.zsh
+[[ -f ~/.zsh_aliases.zsh ]] && source ~/.zsh_aliases.zsh
 
 # === Atuin (auto-init) ===
 if command -v atuin &>/dev/null; then

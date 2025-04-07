@@ -1,0 +1,18 @@
+# ~/.dotfiles/zsh/history.zsh
+
+# === History Configuration ===
+
+# File and size
+HISTFILE=~/.zsh_history
+HISTSIZE=100000         # In-memory history size
+SAVEHIST=100000         # Saved-to-disk history size
+
+# Behavior
+setopt INC_APPEND_HISTORY         # Append to history file immediately
+setopt SHARE_HISTORY              # Share history across all terminal sessions
+setopt HIST_EXPIRE_DUPS_FIRST     # Expire duplicate entries before unique ones
+setopt HIST_IGNORE_ALL_DUPS       # Remove older duplicates when adding a command
+setopt HIST_FIND_NO_DUPS          # Don’t show duplicates during reverse search (Ctrl+R)
+setopt HIST_IGNORE_SPACE          # Don’t save commands starting with a space
+setopt HIST_REDUCE_BLANKS         # Remove extra whitespace before saving
+setopt EXTENDED_HISTORY           # Add timestamps to history entries
