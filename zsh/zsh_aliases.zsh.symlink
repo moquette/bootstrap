@@ -2,23 +2,41 @@
 
 # === Aliases ===
 
-# System & utilities
-alias bundle="brew bundle --file=${DOTFILES_DIR}/Brewfile"
-alias c='clear'
-alias lns='find . -type l'
-alias ls='ls -lG'
-alias lh='ls -ld .??*'
-alias ll='ls -lah'
-alias r="source ${DOTFILES_DIR}/zsh/zshrc.symlink"
+# --- Conditional overrides using GNU coreutils (if available) ---
+# Requires: `brew install coreutils`
+if $(gls &>/dev/null); then
+  # Regular files (directories, symlinks)
+  alias l='gls -l --color=auto --group-directories-first'
+  alias ls='gls -l --color=auto --group-directories-first -I Library'
 
-# Navigation
-alias .='cd ~'
-alias ..='cd ..'
-alias ...='cd ../..'
+  # All files including hidden ones (directories, regular files, dotfiles, symlinks)
+  alias la='gls -lah --color=always --group-directories-first'
 
-# Git
-alias ga='git add .'
-alias gc='git commit -v'
-alias gl='git pull'
-alias gp='git push'
-alias gs='git status'
+  # Hidden files only (directories, regular files, symlinks)
+  alias lh='gls -ld --color=always --group-directories-first .[^.]*'
+
+  # Symlinks only
+  alias ll='gls -lah --color=always --group-directories-first | grep "^l"'
+fi
+
+# --- Navigation ---
+alias .='cd ~'      # change to home directory
+alias ..='cd ..'    # move up one directory level
+
+# --- Shell control ---
+alias c='clear'                                 # clear terminal screen
+alias cls='clear'                               # good ol' Clear Screen command
+alias reload!='. ~/.zshrc'                      # reload config (legacy style)
+alias r='clear && source $HOME/.zshrc'          # clear and reload config
+alias reset='clear && source $HOME/.zshrc'      # alias for config reload
+alias x='exit'                                   # exit terminal
+
+# --- Dotfiles & Dev Scripts ---
+alias az='atuin sync'
+alias bootstrap='~/.dotfiles/script/bootstrap'  # run bootstrap script
+alias edots='code ~/.dotfiles'                  # edit dotfiles in VSCode
+alias ea='code ~/.dotfiles/zsh/aliases.zsh'     # edit aliases file
+alias ez='code ~/.dotfiles/zsh/zshrc.symlink'   # edit zshrc file
+alias install='~/.dotfiles/script/install'      # run install script
+alias maintenance="$HOME/.dotfiles/bin/maintain" # maintenance tasks
+alias zup='zinit self-update && zinit update --all' # update zinit and plugins

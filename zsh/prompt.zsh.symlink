@@ -35,22 +35,22 @@ autoload -Uz colors && colors
 setopt PROMPT_SUBST
 
 # Initialize the prompt symbol (will be updated by precmd)
-PROMPT_SYMBOL="%{$fg[white]%}❯%{$reset_color%}"
+PROMPT_SYMBOL="%{$fg[black]%}%{$bold%}❯%{$reset_color%}"
 
 # Dynamically update ❯ color based on last command status
 precmd() {
   # Check if this is the first time the prompt is being displayed
   if [[ -z ${INITIAL_PROMPT_SHOWN:-} ]]; then
-    PROMPT_SYMBOL="%{$fg[white]%}❯%{$reset_color%}"
+    PROMPT_SYMBOL="%{$fg[black]%}%{$bold%}❯%{$reset_color%}"
     INITIAL_PROMPT_SHOWN=1
     return
   fi
 
   # Update PROMPT_SYMBOL based on last command exit status
   if [[ $? -ne 0 ]]; then
-    PROMPT_SYMBOL="%{$fg[red]%}❯%{$reset_color%}"
+    PROMPT_SYMBOL="%{$fg[red]%}%{$bold%}❯%{$reset_color%}"
   else
-    PROMPT_SYMBOL="%{$fg[white]%}❯%{$reset_color%}"
+    PROMPT_SYMBOL="%{$fg[black]%}%{$bold%}❯%{$reset_color%}"
   fi
 }
 
