@@ -155,6 +155,14 @@ clone_repo
 symlink_dotfiles
 brewfile_install
 
+# === Clean up temporary config.sh file ===
+if [ -z "${KEEP_CONFIG_SH:-}" ]; then
+  if [ -f "$CONFIG_FILE" ]; then
+    rm -f "$CONFIG_FILE"
+    echo "Temporary config.sh removed."
+  fi
+fi
+
 # === Self destruct ===
 [[ -f "$0" && "$0" != "/dev/fd/"* ]] && rm -- "$0"
 
