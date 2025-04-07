@@ -2,6 +2,9 @@
 
 # bin/maintain - System maintenance script
 
+# === DOTFILES directory ===
+DOTFILES_DIR="$HOME/.dotfiles"
+
 # Show help and exit early
 if [[ "$1" == "--help" ]]; then
   echo "Usage: maintenance [--dry | --dry-run]"
@@ -47,7 +50,6 @@ run_task() {
 sync_repo() {
   print_section "Syncing dotfiles and local repositories"
 
-  DOTFILES_DIR="$HOME/.dotfiles"
   DOTLOCAL_DIR="$HOME/Library/Mobile Documents/com~apple~CloudDocs/Dotfiles/Dotlocal"
 
   # Sync .dotfiles repo

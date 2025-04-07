@@ -2,6 +2,9 @@
 
 set -euo pipefail
 
+# === DOTFILES directory ===
+$DOTFILES_DIR="${HOME}/.dotfiles"
+
 # === Passwordless Sudo Setup ===
 setup_passwordless_sudo() {
   local user file rule
@@ -85,11 +88,11 @@ clone_repo() {
     exit 1
   fi
 
-  if [[ ! -d "$HOME/.bootstrap" ]]; then
+  if [[ ! -d "$DOTFILES_DIR" ]]; then
     echo "Cloning bootstrap repo..."
-    git clone https://github.com/moquette/bootstrap.git "$HOME/.bootstrap"
+    git clone https://github.com/moquette/bootstrap.git "$DOTFILES_DIR"
   else
-    echo "$HOME/.bootstrap already exists. Skipping clone."
+    echo "$DOTFILES_DIR already exists. Skipping clone."
   fi
 }
 
@@ -97,7 +100,7 @@ clone_repo() {
 symlink_dotfiles() {
   echo "Linking *.symlink dotfiles into \$HOME..."
 
-  find "$HOME/.bootstrap" -type f -name "*.symlink" | while read -r source; do
+  find "$DOTFILES_DIR" -type f -name "*.symlink" | while read -r source; do
     filename=$(basename "$source")
     base="${filename%.symlink}"
 
@@ -126,7 +129,7 @@ symlink_dotfiles() {
 
 # === Brewfile install ===
 brewfile_install() {
-  local brewfile="$HOME/.bootstrap/Brewfile"
+  local brewfile="$DOTFILES_DIR/Brewfile"
   if [[ -f "$brewfile" ]]; then
     echo "Installing apps from Brewfile..."
     brew bundle --file="$brewfile"
