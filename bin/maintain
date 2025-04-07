@@ -4,12 +4,12 @@
 
 # Show help and exit early
 if [[ "$1" == "--help" ]]; then
-	echo "Usage: maintenance [--dry | --dry-run]"
-	echo "Runs Homebrew and system maintenance tasks."
-	echo
-	echo "Options:"
-	echo "  --dry, --dry-run   Simulate tasks without making changes"
-	return 0 2>/dev/null || exit 0
+  echo "Usage: maintenance [--dry | --dry-run]"
+  echo "Runs Homebrew and system maintenance tasks."
+  echo
+  echo "Options:"
+  echo "  --dry, --dry-run   Simulate tasks without making changes"
+  return 0 2>/dev/null || exit 0
 fi
 
 set -e
@@ -17,7 +17,7 @@ set -e
 # Handle optional --dry flag
 DRY_RUN=false
 if [[ "$1" == "--dry" || "$1" == "--dry-run" ]]; then
-	DRY_RUN=true
+  DRY_RUN=true
 fi
 
 GREEN="\033[0;32m"
@@ -26,69 +26,70 @@ BLUE="\033[0;34m"
 RESET="\033[0m"
 
 print_section() {
-	echo -e "\n${BLUE}› $1${RESET}"
+  echo -e "\n${BLUE}› $1${RESET}"
 }
 
 run_task() {
-	local label="$1"
-	shift
-	if $DRY_RUN; then
-		echo -e "[dry-run] $label"
-	else
-		if "$@" >/dev/null 2>&1; then
-			echo -e "${GREEN}✓${RESET} $label"
-		else
-			echo -e "${RED}✗${RESET} $label"
-		fi
-	fi
+  local label="$1"
+  shift
+  if $DRY_RUN; then
+    echo -e "[dry-run] $label"
+  else
+    if "$@" >/dev/null 2>&1; then
+      echo -e "${GREEN}✓${RESET} $label"
+    else
+      echo -e "${RED}✗${RESET} $label"
+    fi
+  fi
 }
 
 # --- Sync .dotfiles and .dotlocal repositories ---
-print_section "Syncing dotfiles and local repositories"
+sync_repo() {
+  print_section "Syncing dotfiles and local repositories"
 
-DOTFILES_DIR="$HOME/.dotfiles"
-DOTLOCAL_DIR="/Users/moquette/Library/Mobile Documents/com~apple~CloudDocs/Dotfiles/Dotlocal"
+  DOTFILES_DIR="$HOME/.dotfiles"
+  DOTLOCAL_DIR="/Users/moquette/Library/Mobile Documents/com~apple~CloudDocs/Dotfiles/Dotlocal"
 
-# Sync .dotfiles repo
-echo "[..] Syncing .dotfiles repository..."
-if git -C "$DOTFILES_DIR" diff --quiet && git -C "$DOTFILES_DIR" diff --cached --quiet; then
-	git -C "$DOTFILES_DIR" pull --rebase
-	echo "[✔] .dotfiles synced"
-else
-	echo "[⚠️] Skipping .dotfiles pull — you have uncommitted changes"
-fi
+  # Sync .dotfiles repo
+  echo "[..] Syncing .dotfiles repository..."
+  if git -C "$DOTFILES_DIR" diff --quiet && git -C "$DOTFILES_DIR" diff --cached --quiet; then
+    git -C "$DOTFILES_DIR" pull --rebase
+    echo "[✔] .dotfiles synced"
+  else
+    echo "[${RED}✗${RESET}] Skipping .dotfiles pull — you have uncommitted changes"
+  fi
 
-# Sync .dotlocal repo
-echo "[..] Syncing .dotlocal repository..."
-if git -C "$DOTLOCAL_DIR" diff --quiet && git -C "$DOTLOCAL_DIR" diff --cached --quiet; then
-	git -C "$DOTLOCAL_DIR" pull --rebase
-	echo "[✔] .dotlocal synced"
-else
-	echo "[⚠️] Skipping .dotlocal pull — you have uncommitted changes"
-fi
+  # Sync .dotlocal repo
+  echo "[..] Syncing .dotlocal repository..."
+  if git -C "$DOTLOCAL_DIR" diff --quiet && git -C "$DOTLOCAL_DIR" diff --cached --quiet; then
+    git -C "$DOTLOCAL_DIR" pull --rebase
+    echo "[✔] .dotlocal synced"
+  else
+    echo "[${RED}✗${RESET}] Skipping .dotlocal pull — you have uncommitted changes"
+  fi
+}
 
 # --- Main maintenance tasks ---
 print_section "System Maintenance Tasks"
 
 # Ensure brew is in PATH
 if [ -x /opt/homebrew/bin/brew ]; then
-	eval "$(/opt/homebrew/bin/brew shellenv)"
+  eval "$(/opt/homebrew/bin/brew shellenv)"
 elif [ -x /usr/local/bin/brew ]; then
-	eval "$(/usr/local/bin/brew shellenv)"
+  eval "$(/usr/local/bin/brew shellenv)"
 fi
 
 if ! command -v brew >/dev/null 2>&1; then
-	echo -e "${RED}✗ Homebrew not found in PATH${RESET}"
-	exit 1
+  echo -e "${RED}✗ Homebrew not found in PATH${RESET}"
+  exit 1
 fi
 
+run_task "Updateing repo" sync_repo
 run_task "Homebrew update" brew update
 run_task "Homebrew upgrade" brew upgrade
 run_task "Homebrew autoremove" brew autoremove
 run_task "Homebrew cleanup" brew cleanup
 run_task "Brew doctor check" brew doctor
 run_task "Flush DNS cache" sudo dscacheutil -flushcache && sudo killall -HUP mDNSResponder
-run_task "zinit upgrade" zsh -i -c "zinit self-update && zinit update --all"
-run_task "Atuin sync" atuin sync
 
 print_section "Maintenance Complete"
