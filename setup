@@ -107,7 +107,12 @@ symlink_dotfiles() {
       continue
     fi
 
-    target="$HOME/.${base}"
+    # Handle files starting with a dot (e.g., .zshrc.symlink -> .zshrc)
+    if [[ "$base" == .* ]]; then
+      target="$HOME/$base"  # Don't add another dot
+    else
+      target="$HOME/.${base}"  # Add a dot before regular files
+    fi
 
     if [[ -L "$target" || -f "$target" || -d "$target" ]]; then
       echo "Removing existing file: $target"
