@@ -160,8 +160,14 @@ symlink_ssh_dir() {
     mv "$target" "$target.backup"
   fi
 
-  echo "Creating symlink: $target -> $LOCAL_SSH_DIR"
+  echo "→ Linking $target -> $LOCAL_SSH_DIR"
   ln -s "$LOCAL_SSH_DIR" "$target"
+
+  # Set appropriate permissions for the .ssh directory and files
+  echo "→ Setting correct permissions for $LOCAL_SSH_DIR and its contents"
+  chmod 700 "$target"  # Set .ssh directory permissions
+  chmod 600 "$LOCAL_SSH_DIR"/*  # Set permissions for files inside .ssh
+  chown -R "$USER":"$USER" "$target"  # Ensure correct ownership for user
 }
 
 # === Brewfile install ===
