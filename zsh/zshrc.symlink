@@ -1,7 +1,7 @@
 # $HOME/.dotfiles/zsh/zshrc.symlink
 
-# === Define Reusable Variables ===
-readonly DOTFILES="$HOME/.dotfiles"
+# Source the central configuration file
+source "${HOME}/.dotfiles/config.sh"
 
 # === Editor and Path ===
 export EDITOR="vim"
@@ -29,7 +29,7 @@ if [[ -d "/opt/homebrew/bin" ]]; then
 fi
 
 # === History ===
-source_if_exists "$DOTFILES/zsh/zsh_history.zsh"
+source_if_exists "$DOTFILES_DIR/zsh/zsh_history.zsh"
 
 # === Completion ===
 autoload -U compinit && compinit -u
@@ -69,4 +69,4 @@ if [[ -s "${XDG_DATA_HOME:-$HOME/.local/share}/zinit/zinit.git/zinit.zsh" ]]; th
 fi
 
 # === Custom Scripts ===
-add_to_path_if_exists "$DOTFILES/scripts"
+add_to_path_if_exists "$DOTFILES_DIR/scripts"

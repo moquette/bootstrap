@@ -34,14 +34,18 @@ print_section() {
 
 run_task() {
   local label="$1"
+  local cmd_output
   shift
   if $DRY_RUN; then
     echo -e "[dry-run] $label"
   else
-    if "$@" >/dev/null 2>&1; then
+    # Capture command output for potential error reporting
+    cmd_output=$("$@" 2>&1)
+    if [ $? -eq 0 ]; then
       echo -e "${GREEN}✓${RESET} $label"
     else
       echo -e "${RED}✗${RESET} $label"
+      echo -e "Error details: $cmd_output" >&2
     fi
   fi
 }

@@ -1,8 +1,5 @@
 # ~/.dotfiles/zsh/zsh_aliases.zsh.symlink
 
-# === DOTFILES directory ===
-DOTFILES_DIR="$HOME/.dotfiles"
-
 # === Aliases ===
 
 # System & utilities

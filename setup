@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
 set -euo pipefail
+source "$(dirname "$0")/config.sh"
 
 # === DOTFILES directory ===
-$DOTFILES_DIR="${HOME}/.dotfiles"
 
 # === Passwordless Sudo Setup ===
 setup_passwordless_sudo() {
