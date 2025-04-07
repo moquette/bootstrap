@@ -167,7 +167,7 @@ symlink_ssh_dir() {
   echo "→ Setting correct permissions for $LOCAL_SSH_DIR and its contents"
   chmod 700 "$target"  # Set .ssh directory permissions
   chmod 600 "$LOCAL_SSH_DIR"/*  # Set permissions for files inside .ssh
-  chown -R "$USER":"staff" "$target"  # Ensure correct ownership for user
+  chown -R "$USER":"staff" "$HOME/.ssh"  # Ensure correct ownership for user
 }
 
 # === Brewfile install ===
