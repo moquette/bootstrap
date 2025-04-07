@@ -3,8 +3,10 @@
 if [[ $- != *i* ]]; then
   set -euo pipefail
 else
-  # Optionally, set a trap for ERR to log errors without exiting in interactive shells
-  trap 'echo "An error occurred on line $LINENO." >&2' ERR
+  # In interactive mode, only log errors if DEBUG_ERRORS is true
+  if [[ "${DEBUG_ERRORS:-false}" == "true" ]]; then
+    trap 'echo "An error occurred on line $LINENO." >&2' ERR
+  fi
 fi
 
 # Central configuration for dotfiles directory. 
