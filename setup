@@ -164,7 +164,7 @@ symlink_ssh_dir() {
   ln -s "$LOCAL_SSH_DIR" "$target"
 
   # Set appropriate permissions for the .ssh directory and files
-  echo "→ Setting correct permissions for $LOCAL_SSH_DIR and its contents"
+  echo "→ Setting correct permissions for "$HOME/.ssh" and its contents"
   chmod 700 "$target"  # Set .ssh directory permissions
   chmod 600 "$HOME/.ssh"/* "$HOME/.ssh"/**/* 2>/dev/null  # Set permissions for files inside .ssh (including subdirectories)
   chown -R "$USER":"staff" "$HOME/.ssh"  # Ensure correct ownership for user
