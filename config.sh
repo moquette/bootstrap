@@ -15,6 +15,10 @@ fi
 DOTFILES_DIR="${DOTFILES_DIR:-${HOME}/.dotfiles}"
 export DOTFILES_DIR
 
+
+LOCAL_SSH_DIR="${LOCAL_SSH_DIR:-"${HOME}/Library/Mobile Documents/com~apple~CloudDocs/Dotfiles/Dotlocal/ssh"}"
+export LOCAL_SSH_DIR
+
 # Initialize INITIAL_PROMPT_SHOWN to an empty value (acts as a flag for the first prompt display)
 INITIAL_PROMPT_SHOWN="${INITIAL_PROMPT_SHOWN:-}"
 export INITIAL_PROMPT_SHOWN

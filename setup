@@ -136,6 +136,34 @@ symlink_dotfiles() {
   done
 }
 
+# === SSH Directory Symlink ===
+symlink_ssh_dir() {
+  local target="$HOME/.ssh"
+  
+  # Only create symlink if LOCAL_SSH_DIR exists
+  if [[ ! -d "$LOCAL_SSH_DIR" ]]; then
+    echo "Warning: LOCAL_SSH_DIR ($LOCAL_SSH_DIR) does not exist. Skipping SSH symlink creation."
+    return
+  fi
+  
+  if [[ -L "$target" ]]; then
+    # If the symlink already exists and points to LOCAL_SSH_DIR, do nothing
+    if [[ "$(readlink "$target")" == "$LOCAL_SSH_DIR" ]]; then
+      echo "~/.ssh is already correctly linked to $LOCAL_SSH_DIR"
+      return
+    else
+      echo "~/.ssh is linked to a different location. Updating link..."
+      rm "$target"
+    fi
+  elif [[ -e "$target" ]]; then
+    echo "~/.ssh exists and is not a symlink. Moving existing ~/.ssh to ~/.ssh.backup"
+    mv "$target" "$target.backup"
+  fi
+
+  echo "Creating symlink: $target -> $LOCAL_SSH_DIR"
+  ln -s "$LOCAL_SSH_DIR" "$target"
+}
+
 # === Brewfile install ===
 brewfile_install() {
   local brewfile="$DOTFILES_DIR/Brewfile"
@@ -153,6 +181,7 @@ install_xcode_clt
 install_homebrew
 clone_repo
 symlink_dotfiles
+symlink_ssh_dir
 brewfile_install
 
 # === Clean up temporary config.sh file ===

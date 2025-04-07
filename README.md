@@ -46,6 +46,22 @@ cd ${HOME}/.dotfiles
 
 Edit the `config.sh` file to customize your installation preferences.
 
+## SSH Configuration
+
+The bootstrap process automatically creates a symbolic link from your custom SSH directory (specified by the LOCAL_SSH_DIR variable) to ~/.ssh. By default, LOCAL_SSH_DIR is set to:
+
+```bash
+${HOME}/Library/Mobile Documents/com~apple~CloudDocs/Dotfiles/Dotlocal/ssh
+```
+
+This allows you to store your SSH configuration in iCloud for backup and synchronization across devices.
+
+If ~/.ssh already exists and is not a symlink, it will be moved to ~/.ssh.backup before linking. You can override LOCAL_SSH_DIR by setting it as an environment variable before running the bootstrap script:
+
+```bash
+LOCAL_SSH_DIR="/path/to/your/ssh/directory" bash -c "$(curl -fsSL https://raw.githubusercontent.com/moquette/bootstrap/main/setup)"
+```
+
 ## Error Handling
 
 This bootstrap system implements intelligent error handling that adapts to your shell context:
