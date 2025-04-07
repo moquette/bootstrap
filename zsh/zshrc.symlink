@@ -1,44 +1,65 @@
-# ~/.dotfiles/zsh/zshrc.symlink
+# $HOME/.dotfiles/zsh/zshrc.symlink
+
+# === Define Reusable Variables ===
+readonly DOTFILES="$HOME/.dotfiles"
 
 # === Editor and Path ===
 export EDITOR="vim"
 export PATH="$HOME/.tools/usr/local/bin:$PATH"
-[ -d "$HOME/.dotfiles/bin" ] && export PATH="$HOME/.dotfiles/bin:$PATH"
+
+# === Helper Functions ===
+# Source a file if it exists
+source_if_exists() {
+  local file="$1"
+  [[ -f "$file" ]] && source "$file"
+}
+
+# Add directory to PATH if it exists and isn't already in PATH
+add_to_path_if_exists() {
+  local dir="$1"
+  [[ -d "$dir" ]] && [[ ":$PATH:" != *":$dir:"* ]] && export PATH="$dir:$PATH"
+}
 
 # === Homebrew Path ===
 if [[ -d "/opt/homebrew/bin" ]]; then
   export PATH="/opt/homebrew/bin:$PATH"
+  # Disable Homebrew analytics and environment hints for privacy and cleaner output
   export HOMEBREW_NO_ANALYTICS=1
   export HOMEBREW_NO_ENV_HINTS=1
 fi
 
 # === History ===
-[[ -f ~/.dotfiles/zsh/zsh_history.zsh ]] && source ~/.dotfiles/zsh/zsh_history.zsh
+source_if_exists "$DOTFILES/zsh/zsh_history.zsh"
 
 # === Completion ===
 autoload -U compinit && compinit -u
 autoload -Uz bashcompinit && bashcompinit
 
 # === Key Bindings for Atuin ===
-# bindkey '^r' atuin-search
-# bindkey '^[[A' atuin-up-search
-# bindkey '^[OA' atuin-up-search
+# These key bindings are disabled as they're now handled by Atuin's init script
+# Uncomment if you need custom key bindings
+# bindkey '^r' atuin-search           # Ctrl+R for history search
+# bindkey '^[[A' atuin-up-search      # Up arrow for history search
+# bindkey '^[OA' atuin-up-search      # Alternative up arrow binding
 
 # === Aliases ===
-[[ -f ~/.zsh_aliases.zsh ]] && source ~/.zsh_aliases.zsh
+source_if_exists "$HOME/.zsh_aliases.zsh"
 
 # === Atuin (auto-init) ===
 if command -v atuin &>/dev/null; then
-  eval "$(atuin init zsh)"
+  # Check if atuin is already initialized to avoid duplicate PATH entries
+  if ! echo "$PATH" | grep -q "atuin"; then
+    eval "$(atuin init zsh)"
+  else
+    echo "Atuin already initialized, skipping..."
+  fi
 fi
 
 # === FZF ===
-if [[ -f ~/.fzf.zsh ]]; then
-  source ~/.fzf.zsh
-fi
+source_if_exists "$HOME/.fzf.zsh"
 
 # === Custom Prompt ===
-[[ -f ~/.prompt.zsh ]] && source ~/.prompt.zsh
+source_if_exists "$HOME/.prompt.zsh"
 
 # === Zinit (optional plugin manager) ===
 if [[ -s "${XDG_DATA_HOME:-$HOME/.local/share}/zinit/zinit.git/zinit.zsh" ]]; then
@@ -48,4 +69,4 @@ if [[ -s "${XDG_DATA_HOME:-$HOME/.local/share}/zinit/zinit.git/zinit.zsh" ]]; th
 fi
 
 # === Custom Scripts ===
-[[ -d "$HOME/.dotfiles/scripts" ]] && export PATH="$HOME/.dotfiles/scripts:$PATH"
+add_to_path_if_exists "$DOTFILES/scripts"
