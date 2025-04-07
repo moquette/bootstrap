@@ -1,5 +1,4 @@
 # === Aliases ===
-
 alias bundle='brew bundle --file=~/.bootstrap/Brewfile'
 alias c='clear'
 alias lh='ls -ld .??*'
