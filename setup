@@ -72,16 +72,6 @@ install_homebrew() {
     NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" | tee ~/.homebrew-install.log
 
     if [[ -x "${HOMEBREW_PREFIX}/bin/brew" ]]; then
-      #echo "Writing brew shellenv to .zprofile..."
-      #if ! grep -q "# === Homebrew Environment Config ===" "$HOME/.zprofile" 2>/dev/null; then
-      #  {
-      #    echo "# === Homebrew Environment Config ==="
-      #    echo "export HOMEBREW_NO_ANALYTICS=1"
-      #    echo "export HOMEBREW_NO_ENV_HINTS=1"
-      #    echo "eval \"\$(${HOMEBREW_PREFIX}/bin/brew shellenv)\""
-      #  } >> "$HOME/.zprofile"
-      #fi
-
       eval "$("${HOMEBREW_PREFIX}/bin/brew" shellenv)"
       echo "Homebrew installed. Continuing bootstrap..."
     else
@@ -89,7 +79,7 @@ install_homebrew() {
       exit 1
     fi
   else
-    sleep 2  # Adjust the time if needed
+    #sleep 2  # Adjust the time if needed
     eval "$("${HOMEBREW_PREFIX}/bin/brew" shellenv)"
   fi
 }
