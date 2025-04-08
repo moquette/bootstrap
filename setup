@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+# Enable nullglob globally so that globs which don't match expand to nothing.
+shopt -s nullglob
+
 set -euo pipefail
 CONFIG_FILE="$(dirname "$0")/config.sh"
 if [[ ! -f "$CONFIG_FILE" ]]; then
@@ -164,15 +167,16 @@ symlink_ssh_dir() {
   echo "→ Linking $target -> $LOCAL_SSH_DIR"
   ln -s "$LOCAL_SSH_DIR" "$target"
 
-  # Set appropriate permissions for the .ssh directory and files
   echo "→ Setting correct permissions for \"$HOME/.ssh\" and its contents"
-  chmod 700 "$target"  # Set .ssh directory permissions
-  chmod 600 "$HOME/.ssh"/* "$HOME/.ssh"/**/* 2>/dev/null  # Set permissions for files inside .ssh (including subdirectories)
-  chown -R "$USER":"staff" "$HOME/.ssh"  # Ensure correct ownership for user
+  chmod 700 "$target"
+  # The nullglob setting means this command won't error if there are no files
+  chmod 600 "$HOME/.ssh"/* "$HOME/.ssh"/**/* 2>/dev/null
+  chown -R "$USER":"staff" "$HOME/.ssh"
 }
 
 # === Brewfile install ===
 brewfile_install() {
+  echo "Starting brewfile_install..."
   echo "DOTFILES_DIR is set to: $DOTFILES_DIR"
   local brewfile="$DOTFILES_DIR/Brewfile"
   
