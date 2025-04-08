@@ -29,6 +29,17 @@ cd ${HOME}/.dotfiles
 ./setup
 ```
 
+### Debugging Installation
+
+If you encounter issues during installation, particularly with Brewfile installation, you can run the setup script in debug mode to see detailed execution steps:
+
+```bash
+# For debugging Brewfile installation, run:
+bash -x ./setup
+```
+
+This will display each command as it executes, helping to identify where problems might be occurring.
+
 ## Features
 
 - Modular design
@@ -92,6 +103,51 @@ If you want to modify the error handling behavior:
 2. To disable error trapping completely in interactive shells, comment out or remove the trap line.
 
 3. For non-interactive shells, you can modify the strict mode options in the `set -euo pipefail` line.
+
+## Running Setup Multiple Times
+
+The bootstrap setup script is designed to be idempotent, meaning it can be run multiple times without causing issues:
+
+### What Happens on Subsequent Runs
+
+When you run the setup script again after initial installation:
+
+1. **Repository Clone**: The script will detect that the dotfiles directory already exists and skip the cloning step.
+2. **Dotfile Symlinks**: Existing symlinks will be removed and recreated, ensuring they always point to the current files in your dotfiles repository.
+3. **SSH Configuration**: If already correctly linked, the script will detect this and make no changes.
+4. **Brewfile Installation**: The script will run `brew bundle` again, which:
+   - Installs any packages in the Brewfile that aren't already installed
+   - Skips packages that are already installed
+   - Does not remove packages that were previously installed but are no longer in the Brewfile
+
+### Managing Brewfile Installations
+
+The Brewfile at `/Users/moquette/.dotfiles/Brewfile` controls which applications are installed. When you see output like:
+
+```
+Installing coreutils
+Installing gh
+Installing visual-studio-code
+brew bundle complete! 3 Brewfile dependencies now installed.
+```
+
+This indicates that Homebrew is checking each package and installing it if needed. If a package is already installed, Homebrew will simply verify its presence and move on.
+
+### Customizing Repeated Runs
+
+If you want to:
+
+- **Add new packages**: Edit your Brewfile to add new packages, then run the setup script again
+- **Remove packages**: Comment out or remove lines from your Brewfile, then manually uninstall unwanted packages using `brew uninstall <package-name>`
+- **Update all packages**: Run `brew update && brew upgrade` separately from the setup script
+
+### Troubleshooting Repeated Runs
+
+If you encounter issues with repeated runs:
+
+- Check that symlinks are pointing to the correct locations
+- Verify that your Brewfile contains the expected packages
+- Run `brew doctor` to identify and fix any Homebrew-related issues
 
 ## License
 
