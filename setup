@@ -191,6 +191,8 @@ brewfile_install() {
     local status=$?
     if [[ $status -ne 0 ]]; then
       echo "brew bundle exited with status $status" >&2
+    else
+      echo "brew bundle executed successfully."
     fi
   else
     echo "Error: Brewfile not found at $brewfile. Skipping brew bundle execution." >&2
@@ -200,16 +202,22 @@ brewfile_install() {
 # === Main Script ===
 echo "Starting setup_passwordless_sudo..."
 setup_passwordless_sudo
+
 echo "Starting install_xcode_clt..."
 install_xcode_clt
+
 echo "Starting install_homebrew..."
 install_homebrew
+
 echo "Starting clone_repo..."
 clone_repo
+
 echo "Starting symlink_dotfiles..."
 symlink_dotfiles
+
 echo "Starting symlink_ssh_dir..."
 symlink_ssh_dir
+
 echo "Starting brewfile_install..."
 brewfile_install
 
@@ -221,8 +229,8 @@ if [ -z "${KEEP_CONFIG_SH:-}" ]; then
   fi
 fi
 
-# === Self destruct ===
-[[ -f "$0" && "$0" != "/dev/fd/"* ]] && rm -- "$0"
+# === Self destruct (temporarily disabled for debugging) ===
+# [[ -f "$0" && "$0" != "/dev/fd/"* ]] && rm -- "$0"
 
 # === Refresh shell ===
 echo "Bootstrap complete. Please restart terminal."
