@@ -41,9 +41,9 @@ setopt PROMPT_SUBST
 
 # Initialize the prompt symbol based on system appearance.
 if is_dark_mode; then
-  PROMPT_SYMBOL="%{$fg[white]%}%{$bold%}❯%{$reset_color%}"
+  PROMPT_SYMBOL="%{$fg[white]%}%B❯%b%{$reset_color%}"
 else
-  PROMPT_SYMBOL="%{$fg[black]%}%{$bold%}❯%{$reset_color%}"
+  PROMPT_SYMBOL="%{$fg[black]%}%B❯%b%{$reset_color%}"
 fi
 
 # Dynamically update ❯ color based on last command status
@@ -51,9 +51,9 @@ precmd() {
   # If this is the first time the prompt is being displayed
   if [[ -z ${INITIAL_PROMPT_SHOWN:-} ]]; then
     if is_dark_mode; then
-      PROMPT_SYMBOL="%{$fg[white]%}%{$bold%}❯%{$reset_color%}"
+      PROMPT_SYMBOL="%{$fg[white]%}%B❯%b%{$reset_color%}"
     else
-      PROMPT_SYMBOL="%{$fg[black]%}%{$bold%}❯%{$reset_color%}"
+      PROMPT_SYMBOL="%{$fg[black]%}%B❯%b%{$reset_color%}"
     fi
     INITIAL_PROMPT_SHOWN=1
     return
@@ -61,12 +61,12 @@ precmd() {
 
   # Update PROMPT_SYMBOL based on last command exit status
   if [[ $? -ne 0 ]]; then
-    PROMPT_SYMBOL="%{$fg[red]%}%{$bold%}❯%{$reset_color%}"
+    PROMPT_SYMBOL="%{$fg[red]%}%B❯%b%{$reset_color%}"
   else
     if is_dark_mode; then
-      PROMPT_SYMBOL="%{$fg[white]%}%{$bold%}❯%{$reset_color%}"
+      PROMPT_SYMBOL="%{$fg[white]%}%B❯%b%{$reset_color%}"
     else
-      PROMPT_SYMBOL="%{$fg[black]%}%{$bold%}❯%{$reset_color%}"
+      PROMPT_SYMBOL="%{$fg[black]%}%B❯%b%{$reset_color%}"
     fi
   fi
 }
