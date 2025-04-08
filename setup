@@ -176,6 +176,7 @@ brewfile_install() {
   brew bundle --file=~/.dotfiles/Brewfile
 }
 
+
 # === Main Script ===
 setup_passwordless_sudo
 install_xcode_clt
