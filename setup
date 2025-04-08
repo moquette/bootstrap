@@ -174,16 +174,26 @@ symlink_ssh_dir() {
 # === Brewfile install ===
 brewfile_install() {
   echo "DOTFILES_DIR is set to: $DOTFILES_DIR"
+  local brewfile="$DOTFILES_DIR/Brewfile"
+  
   # If Brewfile does not exist but Brewfile.symlink exists, copy it.
-  if [[ ! -f "$DOTFILES_DIR/Brewfile" && -f "$DOTFILES_DIR/Brewfile.symlink" ]]; then
-    echo "Brewfile not found at $DOTFILES_DIR/Brewfile. Found Brewfile.symlink. Copying to Brewfile..."
-    cp "$DOTFILES_DIR/Brewfile.symlink" "$DOTFILES_DIR/Brewfile"
+  if [[ ! -f "$brewfile" && -f "$DOTFILES_DIR/Brewfile.symlink" ]]; then
+    echo "Brewfile not found at $brewfile. Found Brewfile.symlink. Copying to Brewfile..."
+    cp "$DOTFILES_DIR/Brewfile.symlink" "$brewfile"
   fi
-  if [[ -f "$DOTFILES_DIR/Brewfile" ]]; then
-    echo "Using Brewfile at $DOTFILES_DIR/Brewfile"
-    brew bundle --file="$DOTFILES_DIR/Brewfile"
+  
+  if [[ -f "$brewfile" ]]; then
+    echo "Using Brewfile at $brewfile"
+    echo "Contents of Brewfile:"
+    cat "$brewfile"
+    echo "Executing: brew bundle --file=\"$brewfile\""
+    brew bundle --file="$brewfile"
+    local status=$?
+    if [[ $status -ne 0 ]]; then
+      echo "brew bundle exited with status $status" >&2
+    fi
   else
-    echo "Error: Brewfile not found at $DOTFILES_DIR/Brewfile. Skipping brew bundle execution." >&2
+    echo "Error: Brewfile not found at $brewfile. Skipping brew bundle execution." >&2
   fi
 }
 
