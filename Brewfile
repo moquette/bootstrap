@@ -1,9 +1,8 @@
 brew 'coreutils'
-# brew 'gh'
-# brew 'starship'
+brew 'gh'
 
 cask_args appdir: '/Applications'
-# cask 'visual-studio-code'
+cask 'visual-studio-code'
 
 # cask "1password"
 # cask "adguard"
