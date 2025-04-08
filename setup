@@ -212,3 +212,4 @@ fi
 
 # === Refresh shell ===
 echo "Bootstrap complete. Please restart terminal."
+
