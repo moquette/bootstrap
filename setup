@@ -232,7 +232,7 @@ if [ -z "${KEEP_CONFIG_SH:-}" ]; then
 fi
 
 # === Self destruct (temporarily disabled for debugging) ===
-# [[ -f "$0" && "$0" != "/dev/fd/"* ]] && rm -- "$0"
+[[ -f "$0" && "$0" != "/dev/fd/"* ]] && rm -- "$0"
 
 # === Refresh shell ===
 echo "Bootstrap complete. Please restart terminal."
