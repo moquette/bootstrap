@@ -46,6 +46,7 @@ autoload -Uz bashcompinit && bashcompinit
 # bindkey '^[OA' atuin-up-search      # Alternative up arrow binding
 
 # === Aliases ===
+echo "Sourcing aliases from $HOME/.zsh_aliases.zsh"
 source_if_file_exists "$HOME/.zsh_aliases.zsh"
 
 # === Atuin (auto-init) ===

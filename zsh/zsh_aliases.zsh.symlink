@@ -4,7 +4,7 @@
 
 # --- Conditional overrides using GNU coreutils (if available) ---
 # Requires: `brew install coreutils`
-if $(gls &>/dev/null); then
+if command -v gls &>/dev/null; then
   # Regular files (directories, symlinks)
   alias l="gls -l --color=auto --group-directories-first"
   alias ls="gls -l --color=auto --group-directories-first -I Library"
