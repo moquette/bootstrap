@@ -21,7 +21,7 @@ add_to_path_if_exists() {
 }
 
 # === LOCAL RC ===
-source_if_file_exists "${LOCAL_RC_FILE}"
+source_if_file_exists "${LOCALRC_FILE}"
 
 # === Homebrew Path ===
 if [[ -d "/opt/homebrew/bin" ]]; then

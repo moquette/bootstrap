@@ -23,13 +23,13 @@ SSH_DIR="${SSH_DIR:-"${HOME}/Private/Dotlocal/ssh"}"
 export SSH_DIR
 
 # === Local Configuration File ===
-# This section defines and exports the LOCAL_RC_FILE variable, which stores the path to
+# This section defines and exports the LOCALRC_FILE variable, which stores the path to
 # a local configuration file (usually containing secret or environment variables). 
-# If the LOCAL_RC_FILE variable is not already set, it defaults to "$HOME/Private/Dotlocal/localrc".
+# If the LOCALRC_FILE variable is not already set, it defaults to "$HOME/Private/Dotlocal/localrc".
 # The variable is then exported to make it available globally for any child processes or scripts.
-#LOCAL_RC_FILE="${LOCAL_RC_FILE:-"${HOME}/Library/Mobile Documents/com~apple~CloudDocs/Dotfiles/Dotlocal/localrc"}"
-LOCAL_RC_FILE="${LOCAL_RC_FILE:-"${HOME}/Private/Dotlocal/localrc"}"
-export LOCAL_RC_FILE
+#LOCALRC_FILE="${LOCALRC_FILE:-"${HOME}/Library/Mobile Documents/com~apple~CloudDocs/Dotfiles/Dotlocal/localrc"}"
+LOCALRC_FILE="${LOCALRC_FILE:-"${HOME}/Private/Dotlocal/localrc"}"
+export LOCALRC_FILE
 
 # Initialize INITIAL_PROMPT_SHOWN to an empty 
 # value (acts as a flag for the first prompt display)
