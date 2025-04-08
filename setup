@@ -188,8 +188,6 @@ brewfile_install() {
   
   if [[ -f "$brewfile" ]]; then
     echo "Using Brewfile at $brewfile"
-    echo "Contents of Brewfile:"
-    cat "$brewfile"
     echo "Executing: brew bundle --file=\"$brewfile\""
     brew bundle --file="$brewfile"
     local status=$?
