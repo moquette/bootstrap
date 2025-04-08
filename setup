@@ -79,7 +79,6 @@ install_homebrew() {
       exit 1
     fi
   else
-    #sleep 2  # Adjust the time if needed
     eval "$("${HOMEBREW_PREFIX}/bin/brew" shellenv)"
   fi
 }
