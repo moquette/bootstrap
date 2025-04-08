@@ -1,37 +1,21 @@
 #!/usr/bin/env bash
-# Apply strict error handling in non-interactive mode only
-if [[ $- != *i* ]]; then
-  set -euo pipefail
-else
-  # In interactive mode, only log errors if DEBUG_ERRORS is true
-  if [[ "${DEBUG_ERRORS:-false}" == "true" ]]; then
-    trap 'echo "An error occurred on line $LINENO." >&2' ERR
-  fi
-fi
+# Use Bash with strict error handling:
+# -e: Exit immediately if a command exits with a non-zero status
+# -u: Treat unset variables as an error and exit
+# -o pipefail: Return the exit status of the last command in the pipeline that failed
+set -euo pipefail
 
-# Central configuration for dotfiles directory. 
-# Use existing DOTFILES_DIR if set, 
-# otherwise default to ~/.dotfiles
-DOTFILES_DIR="${DOTFILES_DIR:-${HOME}/.dotfiles}"
-export DOTFILES_DIR
+# Set the base directory for dotfiles. Defaults to ~/.dotfiles if not already defined.
+export DOTFILES_DIR="${DOTFILES_DIR:-$HOME/.dotfiles}"
 
-# SSH-related configuration for Local SSH directory
-# This is used to define the location for storing SSH keys and configurations
-# If you don't need SSH config files, you can comment out this section
-#SSH_DIR="${SSH_DIR:-"${HOME}/Library/Mobile Documents/com~apple~CloudDocs/Dotfiles/Dotlocal/ssh"}"
-SSH_DIR="${SSH_DIR:-"${HOME}/Private/Dotlocal/ssh"}"
-export SSH_DIR
+# Define the SSH configuration directory. Defaults to ~/Private/Dotlocal/ssh.
+# Adjust this path if you store SSH keys/configs elsewhere.
+export SSH_DIR="${SSH_DIR:-$HOME/Private/Dotlocal/ssh}"
 
-# === Local Configuration File ===
-# This section defines and exports the LOCALRC_FILE variable, which stores the path to
-# a local configuration file (usually containing secret or environment variables). 
-# If the LOCALRC_FILE variable is not already set, it defaults to "$HOME/Private/Dotlocal/localrc".
-# The variable is then exported to make it available globally for any child processes or scripts.
-#LOCALRC_FILE="${LOCALRC_FILE:-"${HOME}/Library/Mobile Documents/com~apple~CloudDocs/Dotfiles/Dotlocal/localrc"}"
-LOCALRC_FILE="${LOCALRC_FILE:-"${HOME}/Private/Dotlocal/localrc"}"
-export LOCALRC_FILE
+# Path to the local RC file containing private environment variables or secrets.
+# Defaults to ~/Private/Dotlocal/localrc.
+export LOCALRC_FILE="${LOCALRC_FILE:-$HOME/Private/Dotlocal/localrc}"
 
-# Initialize INITIAL_PROMPT_SHOWN to an empty 
-# value (acts as a flag for the first prompt display)
-INITIAL_PROMPT_SHOWN="${INITIAL_PROMPT_SHOWN:-}"
-export INITIAL_PROMPT_SHOWN
+# A flag variable used to track whether the initial prompt has been shown.
+# Defaults to an empty string if unset.
+export INITIAL_PROMPT_SHOWN="${INITIAL_PROMPT_SHOWN:-}"
