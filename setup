@@ -174,17 +174,29 @@ symlink_ssh_dir() {
 # === Brewfile install ===
 brewfile_install() {
   echo "DOTFILES_DIR is set to: $DOTFILES_DIR"
-  brew bundle --file=~/.dotfiles/Brewfile
+  if [[ -f "$DOTFILES_DIR/Brewfile" ]]; then
+    echo "Using Brewfile at $DOTFILES_DIR/Brewfile"
+    brew bundle --file="$DOTFILES_DIR/Brewfile"
+  else
+    echo "Error: Brewfile not found at $DOTFILES_DIR/Brewfile. Skipping brew bundle execution." >&2
+  fi
 }
 
 
 # === Main Script ===
+echo "Starting setup_passwordless_sudo..."
 setup_passwordless_sudo
+echo "Starting install_xcode_clt..."
 install_xcode_clt
+echo "Starting install_homebrew..."
 install_homebrew
+echo "Starting clone_repo..."
 clone_repo
+echo "Starting symlink_dotfiles..."
 symlink_dotfiles
+echo "Starting symlink_ssh_dir..."
 symlink_ssh_dir
+echo "Starting brewfile_install..."
 brewfile_install
 
 # === Clean up temporary config.sh file ===
