@@ -2,6 +2,11 @@
 
 # === Custom Prompt ===
 
+# Define a function to detect Dark Mode on macOS.
+is_dark_mode() {
+  [[ "$(defaults read -g AppleInterfaceStyle 2>/dev/null)" == "Dark" ]]
+}
+
 # Git branch, sync status, and dirty flag helper function
 git_prompt_info() {
   if git rev-parse --is-inside-work-tree &>/dev/null; then
@@ -34,14 +39,22 @@ autoload -Uz colors && colors
 # Enable prompt substitution
 setopt PROMPT_SUBST
 
-# Initialize the prompt symbol (will be updated by precmd)
-PROMPT_SYMBOL="%{$fg[black]%}%{$bold%}❯%{$reset_color%}"
+# Initialize the prompt symbol based on system appearance.
+if is_dark_mode; then
+  PROMPT_SYMBOL="%{$fg[white]%}%{$bold%}❯%{$reset_color%}"
+else
+  PROMPT_SYMBOL="%{$fg[black]%}%{$bold%}❯%{$reset_color%}"
+fi
 
 # Dynamically update ❯ color based on last command status
 precmd() {
-  # Check if this is the first time the prompt is being displayed
+  # If this is the first time the prompt is being displayed
   if [[ -z ${INITIAL_PROMPT_SHOWN:-} ]]; then
-    PROMPT_SYMBOL="%{$fg[black]%}%{$bold%}❯%{$reset_color%}"
+    if is_dark_mode; then
+      PROMPT_SYMBOL="%{$fg[white]%}%{$bold%}❯%{$reset_color%}"
+    else
+      PROMPT_SYMBOL="%{$fg[black]%}%{$bold%}❯%{$reset_color%}"
+    fi
     INITIAL_PROMPT_SHOWN=1
     return
   fi
@@ -50,7 +63,11 @@ precmd() {
   if [[ $? -ne 0 ]]; then
     PROMPT_SYMBOL="%{$fg[red]%}%{$bold%}❯%{$reset_color%}"
   else
-    PROMPT_SYMBOL="%{$fg[black]%}%{$bold%}❯%{$reset_color%}"
+    if is_dark_mode; then
+      PROMPT_SYMBOL="%{$fg[white]%}%{$bold%}❯%{$reset_color%}"
+    else
+      PROMPT_SYMBOL="%{$fg[black]%}%{$bold%}❯%{$reset_color%}"
+    fi
   fi
 }
 
