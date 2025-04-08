@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
-# Use Bash with strict error handling:
-# -e: Exit immediately if a command exits with a non-zero status
-# -u: Treat unset variables as an error and exit
-# -o pipefail: Return the exit status of the last command in the pipeline that failed
-set -euo pipefail
+# Strict mode if not interactive, else trap errors if DEBUG_ERRORS=true
+[[ $- != *i* ]] && set -euo pipefail || \
+  [[ "${DEBUG_ERRORS:-false}" == "true" ]] && \
+  trap 'echo "An error occurred on line $LINENO." >&2' ERR
 
 # Set the base directory for dotfiles. Defaults to ~/.dotfiles if not already defined.
 export DOTFILES_DIR="${DOTFILES_DIR:-$HOME/.dotfiles}"
