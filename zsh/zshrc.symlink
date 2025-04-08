@@ -45,6 +45,9 @@ autoload -Uz bashcompinit && bashcompinit
 # bindkey '^[[A' atuin-up-search      # Up arrow for history search
 # bindkey '^[OA' atuin-up-search      # Alternative up arrow binding
 
+# === Fuctions ===
+source_if_file_exists "$HOME/.zsh_functions.zsh"
+
 # === Aliases ===
 source_if_file_exists "$HOME/.zsh_aliases.zsh"
 
