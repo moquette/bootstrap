@@ -9,7 +9,7 @@ export PATH="$HOME/.tools/usr/local/bin:$PATH"
 
 # === Helper Functions ===
 # Source a file if it exists
-source_if_exists() {
+source_if_file_exists() {
   local file="$1"
   [[ -f "$file" ]] && source "$file"
 }
@@ -20,6 +20,9 @@ add_to_path_if_exists() {
   [[ -d "$dir" ]] && [[ ":$PATH:" != *":$dir:"* ]] && export PATH="$dir:$PATH"
 }
 
+# === LOCAL RC ===
+source_if_file_exists "${LOCAL_RC_FILE}"
+
 # === Homebrew Path ===
 if [[ -d "/opt/homebrew/bin" ]]; then
   export PATH="/opt/homebrew/bin:$PATH"
@@ -29,7 +32,7 @@ if [[ -d "/opt/homebrew/bin" ]]; then
 fi
 
 # === History ===
-source_if_exists "$DOTFILES_DIR/zsh/zsh_history.zsh"
+source_if_file_exists "$DOTFILES_DIR/zsh/zsh_history.zsh"
 
 # === Completion ===
 autoload -U compinit && compinit -u
@@ -43,7 +46,7 @@ autoload -Uz bashcompinit && bashcompinit
 # bindkey '^[OA' atuin-up-search      # Alternative up arrow binding
 
 # === Aliases ===
-source_if_exists "$HOME/.zsh_aliases.zsh"
+source_if_file_exists "$HOME/.zsh_aliases.zsh"
 
 # === Atuin (auto-init) ===
 if command -v atuin &>/dev/null; then
@@ -56,10 +59,10 @@ if command -v atuin &>/dev/null; then
 fi
 
 # === FZF ===
-source_if_exists "$HOME/.fzf.zsh"
+source_if_file_exists "$HOME/.fzf.zsh"
 
 # === Custom Prompt ===
-source_if_exists "$HOME/.prompt.zsh"
+source_if_file_exists "$HOME/.prompt.zsh"
 
 # === Zinit (optional plugin manager) ===
 if [[ -s "${XDG_DATA_HOME:-$HOME/.local/share}/zinit/zinit.git/zinit.zsh" ]]; then
