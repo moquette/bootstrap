@@ -172,12 +172,16 @@ symlink_ssh_dir() {
 
 # === Brewfile install ===
 brewfile_install() {
+  echo "DOTFILES_DIR is set to: $DOTFILES_DIR"
   local brewfile="$DOTFILES_DIR/Brewfile"
   if [[ -f "$brewfile" ]]; then
-    echo "Installing apps from Brewfile..."
+    echo "Installing apps from Brewfile at $brewfile..."
     brew bundle --file="$brewfile"
+  elif [[ -f "./Brewfile" ]]; then
+    echo "Brewfile not found at $DOTFILES_DIR/Brewfile but found in current directory. Installing apps from local Brewfile..."
+    brew bundle --file="./Brewfile"
   else
-    echo "No Brewfile found at $brewfile. Skipping."
+    echo "No Brewfile found at $brewfile or in local directory. Skipping."
   fi
 }
 
