@@ -2,20 +2,21 @@
 
 # Enable nullglob globally so that globs which don't match expand to nothing.
 shopt -s nullglob
-
 set -euo pipefail
-CONFIG_FILE="$(dirname "$0")/config.sh"
-if [[ ! -f "$CONFIG_FILE" ]]; then
-  echo "config.sh not found. Downloading..."
-  curl -fsSL https://raw.githubusercontent.com/moquette/bootstrap/main/config.sh -o "$CONFIG_FILE"
-  if [[ $? -ne 0 ]]; then
-    echo "Failed to download config.sh. Please check your network connection." >&2
-    exit 1
-  fi
-fi
-source "$CONFIG_FILE"
 
-# === DOTFILES directory ===
+# === Load configuration ===
+load_config_file() {
+  CONFIG_FILE="$(dirname "$0")/config.sh"
+  if [[ ! -f "$CONFIG_FILE" ]]; then
+    echo "config.sh not found. Downloading..."
+    curl -fsSL https://raw.githubusercontent.com/moquette/bootstrap/main/config.sh -o "$CONFIG_FILE"
+    if [[ $? -ne 0 ]]; then
+      echo "Failed to download config.sh. Please check your network connection." >&2
+      exit 1
+    fi
+  fi
+  source "$CONFIG_FILE"
+}
 
 # === Passwordless Sudo Setup ===
 setup_passwordless_sudo() {
@@ -176,6 +177,8 @@ brewfile_install() {
 
 
 # === Main Script ===
+echo "Loading config file..."
+load_config_file
 echo "Starting setup_passwordless_sudo..."
 setup_passwordless_sudo
 echo "Starting install_xcode_clt..."
