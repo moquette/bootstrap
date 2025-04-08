@@ -18,9 +18,9 @@ export DOTFILES_DIR
 # SSH-related configuration for Local SSH directory
 # This is used to define the location for storing SSH keys and configurations
 # If you don't need SSH config files, you can comment out this section
-#LOCAL_SSH_DIR="${LOCAL_SSH_DIR:-"${HOME}/Library/Mobile Documents/com~apple~CloudDocs/Dotfiles/Dotlocal/ssh"}"
-LOCAL_SSH_DIR="${LOCAL_SSH_DIR:-"${HOME}/Private/Dotlocal/ssh"}"
-export LOCAL_SSH_DIR
+#SSH_DIR="${SSH_DIR:-"${HOME}/Library/Mobile Documents/com~apple~CloudDocs/Dotfiles/Dotlocal/ssh"}"
+SSH_DIR="${SSH_DIR:-"${HOME}/Private/Dotlocal/ssh"}"
+export SSH_DIR
 
 # === Local Configuration File ===
 # This section defines and exports the LOCAL_RC_FILE variable, which stores the path to

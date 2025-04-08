@@ -133,16 +133,16 @@ symlink_dotfiles() {
 symlink_ssh_dir() {
   local target="$HOME/.ssh"
   
-  # Only create symlink if LOCAL_SSH_DIR exists
-  if [[ ! -d "$LOCAL_SSH_DIR" ]]; then
-    echo "Warning: LOCAL_SSH_DIR ($LOCAL_SSH_DIR) does not exist. Skipping SSH symlink creation."
+  # Only create symlink if SSH_DIR exists
+  if [[ ! -d "$SSH_DIR" ]]; then
+    echo "Warning: SSH_DIR ($SSH_DIR) does not exist. Skipping SSH symlink creation."
     return
   fi
   
   if [[ -L "$target" ]]; then
-    # If the symlink already exists and points to LOCAL_SSH_DIR, do nothing
-    if [[ "$(readlink "$target")" == "$LOCAL_SSH_DIR" ]]; then
-      echo "~/.ssh is already correctly linked to $LOCAL_SSH_DIR"
+    # If the symlink already exists and points to SSH_DIR, do nothing
+    if [[ "$(readlink "$target")" == "$SSH_DIR" ]]; then
+      echo "~/.ssh is already correctly linked to $SSH_DIR"
       return
     else
       echo "~/.ssh is linked to a different location. Updating link..."
@@ -153,8 +153,8 @@ symlink_ssh_dir() {
     mv "$target" "$target.backup"
   fi
 
-  echo "→ Linking $target -> $LOCAL_SSH_DIR"
-  ln -s "$LOCAL_SSH_DIR" "$target"
+  echo "→ Linking $target -> $SSH_DIR"
+  ln -s "$SSH_DIR" "$target"
 
   # Set appropriate permissions for the .ssh directory and files
   echo "→ Setting correct permissions for "$HOME/.ssh" and its contents"
