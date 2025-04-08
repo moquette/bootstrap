@@ -72,15 +72,15 @@ install_homebrew() {
     NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" | tee ~/.homebrew-install.log
 
     if [[ -x "${HOMEBREW_PREFIX}/bin/brew" ]]; then
-      echo "Writing brew shellenv to .zprofile..."
-      if ! grep -q "# === Homebrew Environment Config ===" "$HOME/.zprofile" 2>/dev/null; then
-        {
-          echo "# === Homebrew Environment Config ==="
-          echo "export HOMEBREW_NO_ANALYTICS=1"
-          echo "export HOMEBREW_NO_ENV_HINTS=1"
-          echo "eval \"\$(${HOMEBREW_PREFIX}/bin/brew shellenv)\""
-        } >> "$HOME/.zprofile"
-      fi
+      #echo "Writing brew shellenv to .zprofile..."
+      #if ! grep -q "# === Homebrew Environment Config ===" "$HOME/.zprofile" 2>/dev/null; then
+      #  {
+      #    echo "# === Homebrew Environment Config ==="
+      #    echo "export HOMEBREW_NO_ANALYTICS=1"
+      #    echo "export HOMEBREW_NO_ENV_HINTS=1"
+      #    echo "eval \"\$(${HOMEBREW_PREFIX}/bin/brew shellenv)\""
+      #  } >> "$HOME/.zprofile"
+      #fi
 
       eval "$("${HOMEBREW_PREFIX}/bin/brew" shellenv)"
       echo "Homebrew installed. Continuing bootstrap..."
@@ -117,9 +117,9 @@ symlink_dotfiles() {
     filename=$(basename "$source")
     base="${filename%.symlink}"
 
-    # Skip Brewfile.symlink from being linked to $HOME (we will handle it separately)
+    # Skip Brewfile.symlink
     if [[ "$base" == "Brewfile" ]]; then
-      echo "Skipping $filename (not meant to be linked to \$HOME)"
+      echo "Skipping $filename (not meant to be linked)"
       continue
     fi
 
@@ -167,59 +167,38 @@ symlink_ssh_dir() {
   echo "→ Linking $target -> $LOCAL_SSH_DIR"
   ln -s "$LOCAL_SSH_DIR" "$target"
 
-  echo "→ Setting correct permissions for \"$HOME/.ssh\" and its contents"
-  chmod 700 "$target"
-  # The nullglob setting means this command won't error if there are no files
-  chmod 600 "$HOME/.ssh"/* "$HOME/.ssh"/**/* 2>/dev/null
-  chown -R "$USER":"staff" "$HOME/.ssh"
+  # Set appropriate permissions for the .ssh directory and files
+  echo "→ Setting correct permissions for "$HOME/.ssh" and its contents"
+  chmod 700 "$target"  # Set .ssh directory permissions
+  chmod 600 "$HOME/.ssh"/* "$HOME/.ssh"/**/* 2>/dev/null  # Set permissions for files inside .ssh (including subdirectories)
+  chown -R "$USER":"staff" "$HOME/.ssh"  # Ensure correct ownership for user
 }
 
 # === Brewfile install ===
 brewfile_install() {
-  echo "Starting brewfile_install..."
   echo "DOTFILES_DIR is set to: $DOTFILES_DIR"
-  local brewfile="$DOTFILES_DIR/Brewfile"
-  
-  # If Brewfile does not exist but Brewfile.symlink exists, copy it.
-  if [[ ! -f "$brewfile" && -f "$DOTFILES_DIR/Brewfile.symlink" ]]; then
-    echo "Brewfile not found at $brewfile. Found Brewfile.symlink. Copying to Brewfile..."
-    cp "$DOTFILES_DIR/Brewfile.symlink" "$brewfile"
-  fi
-  
-  if [[ -f "$brewfile" ]]; then
-    echo "Using Brewfile at $brewfile"
-    echo "Executing: brew bundle --file=\"$brewfile\""
-    brew bundle --file="$brewfile"
-    local status=$?
-    if [[ $status -ne 0 ]]; then
-      echo "brew bundle exited with status $status" >&2
-    else
-      echo "brew bundle executed successfully."
-    fi
+  if [[ -f "$DOTFILES_DIR/Brewfile" ]]; then
+    echo "Using Brewfile at $DOTFILES_DIR/Brewfile"
+    brew bundle --file="$DOTFILES_DIR/Brewfile"
   else
-    echo "Error: Brewfile not found at $brewfile. Skipping brew bundle execution." >&2
+    echo "Error: Brewfile not found at $DOTFILES_DIR/Brewfile. Skipping brew bundle execution." >&2
   fi
 }
+
 
 # === Main Script ===
 echo "Starting setup_passwordless_sudo..."
 setup_passwordless_sudo
-
 echo "Starting install_xcode_clt..."
 install_xcode_clt
-
 echo "Starting install_homebrew..."
 install_homebrew
-
 echo "Starting clone_repo..."
 clone_repo
-
 echo "Starting symlink_dotfiles..."
 symlink_dotfiles
-
 echo "Starting symlink_ssh_dir..."
 symlink_ssh_dir
-
 echo "Starting brewfile_install..."
 brewfile_install
 
@@ -231,7 +210,7 @@ if [ -z "${KEEP_CONFIG_SH:-}" ]; then
   fi
 fi
 
-# === Self destruct (temporarily disabled for debugging) ===
+# === Self destruct ===
 [[ -f "$0" && "$0" != "/dev/fd/"* ]] && rm -- "$0"
 
 # === Refresh shell ===
