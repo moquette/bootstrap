@@ -1,0 +1,10 @@
+# Set Homebrew environment (Apple Silicon)
+if [ -x /opt/homebrew/bin/brew ]; then
+ 
+ # Disable Homebrew analytics and environment hints
+  export HOMEBREW_NO_ANALYTICS=1
+  export HOMEBREW_NO_ENV_HINTS=1
+
+  # === Homebrew Environment Config ==="
+  eval "$(/opt/homebrew/bin/brew shellenv)"
+fi
