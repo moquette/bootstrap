@@ -1,4 +1,5 @@
 brew 'coreutils'
+brew 'fzf'
 brew 'gh'
 
 cask_args appdir: '/Applications'

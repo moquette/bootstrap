@@ -1,13 +1,7 @@
-# $HOME/.dotfiles/zsh/zshrc.symlink
-
-# Source the central configuration file
-source "${HOME}/.dotfiles/config.sh"
-
-# === Editor and Path ===
-export EDITOR="vim"
-export PATH="$HOME/.tools/usr/local/bin:$PATH"
+# ~/.dotfiles/zsh/zshrc.symlink
 
 # === Helper Functions ===
+
 # Source a file if it exists
 source_if_file_exists() {
   local file="$1"
@@ -20,59 +14,50 @@ add_to_path_if_exists() {
   [[ -d "$dir" ]] && [[ ":$PATH:" != *":$dir:"* ]] && export PATH="$dir:$PATH"
 }
 
-# === LOCAL RC ===
-source_if_file_exists "${LOCALRC_FILE}"
+# === Core Config ===
 
-# === Homebrew Path ===
-if [[ -d "/opt/homebrew/bin" ]]; then
-  export PATH="/opt/homebrew/bin:$PATH"
-  # Disable Homebrew analytics and environment hints for privacy and cleaner output
-  export HOMEBREW_NO_ANALYTICS=1
-  export HOMEBREW_NO_ENV_HINTS=1
-fi
+# Source the central configuration file
+source_if_file_exists "$HOME/.dotfiles/config.sh"
 
-# === History ===
+# === Editor & PATH Setup ===
+
+export EDITOR="vim"
+export PATH="$HOME/.tools/usr/local/bin:$PATH"
+
+# Add custom scripts directory to PATH
+add_to_path_if_exists "$DOTFILES_DIR/scripts"
+
+# === Local RC ===
+
+source_if_file_exists "$LOCALRC_FILE"
+
+# === Shell Behavior Enhancements ===
+
+# History options
 source_if_file_exists "$DOTFILES_DIR/zsh/zsh_history.zsh"
 
-# === Completion ===
-autoload -U compinit && compinit -u
-autoload -Uz bashcompinit && bashcompinit
+# Completion system
+if ! type compdef &>/dev/null; then
+  autoload -U compinit && compinit -u
+  autoload -Uz bashcompinit && bashcompinit
+fi
 
-# === Key Bindings for Atuin ===
-# These key bindings are disabled as they're now handled by Atuin's init script
-# Uncomment if you need custom key bindings
-# bindkey '^r' atuin-search           # Ctrl+R for history search
-# bindkey '^[[A' atuin-up-search      # Up arrow for history search
-# bindkey '^[OA' atuin-up-search      # Alternative up arrow binding
+# Smarter history search with arrow keys
+for widget in up-line-or-beginning-search down-line-or-beginning-search; do
+  autoload -U "$widget"
+  zle -N "$widget"
+done
 
-# === Fuctions ===
+bindkey "^[[A" up-line-or-beginning-search  # Up arrow
+bindkey "^[[B" down-line-or-beginning-search  # Down arrow
+
+# === Optional Features ===
+
+# FZF integration
+source <(fzf --zsh)
+
+# === User Customizations ===
+
 source_if_file_exists "$HOME/.zsh_functions.zsh"
-
-# === Aliases ===
 source_if_file_exists "$HOME/.zsh_aliases.zsh"
-
-# === Atuin (auto-init) ===
-if command -v atuin &>/dev/null; then
-  # Check if atuin is already initialized to avoid duplicate PATH entries
-  if ! echo "$PATH" | grep -q "atuin"; then
-    eval "$(atuin init zsh)"
-  else
-    echo "Atuin already initialized, skipping..."
-  fi
-fi
-
-# === FZF ===
-source_if_file_exists "$HOME/.fzf.zsh"
-
-# === Custom Prompt ===
 source_if_file_exists "$HOME/.prompt.zsh"
-
-# === Zinit (optional plugin manager) ===
-if [[ -s "${XDG_DATA_HOME:-$HOME/.local/share}/zinit/zinit.git/zinit.zsh" ]]; then
-  source "${XDG_DATA_HOME:-$HOME/.local/share}/zinit/zinit.git/zinit.zsh"
-  zinit light zsh-users/zsh-autosuggestions
-  zinit light zsh-users/zsh-syntax-highlighting
-fi
-
-# === Custom Scripts ===
-add_to_path_if_exists "$DOTFILES_DIR/scripts"
