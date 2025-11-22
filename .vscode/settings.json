@@ -1,0 +1,61 @@
+{
+  // ============================================================================
+  // EDITOR CORE SETTINGS
+  // ============================================================================
+  "editor.tabSize": 2,
+  "editor.insertSpaces": true,
+  "editor.detectIndentation": false,
+  "editor.formatOnSave": true,
+  "editor.renderWhitespace": "selection",
+
+  // ============================================================================
+  // LANGUAGE-SPECIFIC SETTINGS
+  // ============================================================================
+  "[shellscript]": {
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true,
+    "editor.formatOnSave": false
+  },
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "[markdown]": {
+    "editor.formatOnSave": false,
+    "editor.wordWrap": "on"
+  },
+
+  // ============================================================================
+  // EXPLORER & FILE MANAGEMENT
+  // ============================================================================
+  "explorer.sortOrder": "type",
+  "explorer.compactFolders": false,
+  "explorer.excludeGitIgnore": false,
+  "files.exclude": {
+    "**/.DS_Store": true
+  },
+
+  // ============================================================================
+  // WORKBENCH & UI PREFERENCES
+  // ============================================================================
+  "workbench.colorTheme": "Default Dark Modern",
+  "workbench.editor.enablePreview": true,
+  "workbench.editor.enablePreviewFromQuickOpen": false,
+  "workbench.startupEditor": "none",
+
+  // ============================================================================
+  // GIT & SOURCE CONTROL
+  // ============================================================================
+  "git.autofetch": true,
+  "git.confirmSync": false,
+  "scm.diffDecorationsGutterShowsModifiedLines": true,
+
+  // ============================================================================
+  // SEARCH & REPLACE
+  // ============================================================================
+  "search.exclude": {
+    "**/.git": true,
+    "**/node_modules": true,
+    "**/.DS_Store": true
+  }
+}
