@@ -47,7 +47,8 @@ filetype plugin indent on  " Enable filetype detection
 # Add or remove packages as needed. Set to empty array to skip installation.
 # ----------------------------------------------------------------------------
 ESSENTIAL_PACKAGES=(
-  fzf          # Fuzzy finder for better history search
+  node        # JavaScript runtime
+  fzf         # Fuzzy finder for better history search
 )
 
 # ----------------------------------------------------------------------------
@@ -101,6 +102,17 @@ MACOS_DEFAULTS=(
 CUSTOM_SSH_DIR=""
 
 # ----------------------------------------------------------------------------
+# Custom Bin Directory (Optional)
+# Set to your preferred location to symlink personal scripts/binaries from cloud storage
+# Examples:
+#   CUSTOM_BIN_DIR="$HOME/Dropbox/bin"
+#   CUSTOM_BIN_DIR="$HOME/Library/Mobile Documents/com~apple~CloudDocs/bin"
+# Leave blank to skip custom bin setup
+# Note: ~/.bin will be added to PATH with priority over system directories
+# ----------------------------------------------------------------------------
+CUSTOM_BIN_DIR=""
+
+# ----------------------------------------------------------------------------
 # Shell Aliases - Customize to your preferences
 # Edit these alias definitions directly. Format: alias name='command'
 # To add a new alias, add a line like: alias myalias='my command'
@@ -130,6 +142,12 @@ alias ea='vim ~/.zshrc'
 # Hushlogin
 # ----------------------------------------------------------------------------
 [ -f ~/.hushlogin ] || { touch ~/.hushlogin && echo '~/.hushlogin created.'; }
+
+# ----------------------------------------------------------------------------
+# Bootstrap State Directory
+# Central location for all bootstrap signature files
+# ----------------------------------------------------------------------------
+[ -d ~/.bootstrapped ] || { mkdir -p ~/.bootstrapped && echo '~/.bootstrapped created.'; }
 
 # ----------------------------------------------------------------------------
 # Vim Configuration (Bootstrap Phase)
@@ -171,38 +189,66 @@ if [[ "$OSTYPE" == "darwin"* ]] && ! (( ${+commands[brew]} )); then
 fi
 
 # ----------------------------------------------------------------------------
-# Essential Packages Auto-Install
+# Essential Packages Auto-Install (Smart Detection)
 # Consumes ESSENTIAL_PACKAGES array from customization section
+# Automatically detects when packages are added/removed and re-installs
 # ----------------------------------------------------------------------------
-if (( ${+commands[brew]} )) && [ ! -f ~/.zshrc_packages_installed ] && [ ${#ESSENTIAL_PACKAGES[@]} -gt 0 ]; then
-  echo "Installing essential packages..."
-  for package in "${ESSENTIAL_PACKAGES[@]}"; do
-    if ! brew list "$package" &>/dev/null; then
-      echo "  Installing $package..."
-      brew install "$package"
-    fi
-  done
-
-  # Create flag file to prevent re-running
-  touch ~/.zshrc_packages_installed
-  echo "Essential packages installed."
+if (( ${+commands[brew]} )) && [ ${#ESSENTIAL_PACKAGES[@]} -gt 0 ]; then
+  # Create a signature of the current package list
+  local packages_signature="${ESSENTIAL_PACKAGES[*]}"
+  local packages_flag="$HOME/.bootstrapped/packages"
+  local stored_signature=""
+  
+  # Read stored signature if it exists
+  if [ -f "$packages_flag" ]; then
+    stored_signature=$(cat "$packages_flag")
+  fi
+  
+  # Install if signature changed (packages added/removed) or flag doesn't exist
+  if [ "$packages_signature" != "$stored_signature" ]; then
+    echo "Installing essential packages..."
+    for package in "${ESSENTIAL_PACKAGES[@]}"; do
+      if ! brew list "$package" &>/dev/null; then
+        echo "  Installing $package..."
+        brew install "$package"
+      fi
+    done
+    
+    # Store the current signature to detect future changes
+    echo "$packages_signature" > "$packages_flag"
+    echo "Essential packages installed."
+  fi
 fi
 
 # ----------------------------------------------------------------------------
 # macOS Defaults Configuration (Bootstrap Phase)
 # Consumes MACOS_DEFAULTS array from customization section
+# Automatically detects when defaults are added/removed/modified and re-applies
 # Comment out lines in MACOS_DEFAULTS to skip specific settings
 # ----------------------------------------------------------------------------
-if [[ "$OSTYPE" == "darwin"* ]] && [ ! -f ~/.zshrc_macos_configured ] && [ ${#MACOS_DEFAULTS[@]} -gt 0 ]; then
-  echo "Configuring macOS defaults..."
-
-  for default_cmd in "${MACOS_DEFAULTS[@]}"; do
-    eval "$default_cmd"
-  done
-
-  # Create flag file to prevent re-running
-  touch ~/.zshrc_macos_configured
-  echo "macOS defaults configured. Restart apps for changes to take effect."
+if [[ "$OSTYPE" == "darwin"* ]] && [ ${#MACOS_DEFAULTS[@]} -gt 0 ]; then
+  # Create a signature of the current defaults list
+  local defaults_signature="${MACOS_DEFAULTS[*]}"
+  local defaults_flag="$HOME/.bootstrapped/macos"
+  local stored_signature=""
+  
+  # Read stored signature if it exists
+  if [ -f "$defaults_flag" ]; then
+    stored_signature=$(cat "$defaults_flag")
+  fi
+  
+  # Apply if signature changed (defaults added/removed/modified) or flag doesn't exist
+  if [ "$defaults_signature" != "$stored_signature" ]; then
+    echo "Configuring macOS defaults..."
+    
+    for default_cmd in "${MACOS_DEFAULTS[@]}"; do
+      eval "$default_cmd"
+    done
+    
+    # Store the current signature to detect future changes
+    echo "$defaults_signature" > "$defaults_flag"
+    echo "macOS defaults configured. Restart apps for changes to take effect."
+  fi
 fi
 
 # ----------------------------------------------------------------------------
@@ -214,7 +260,7 @@ if [[ -n "$CUSTOM_SSH_DIR" ]]; then
   if [[ ! -d "$CUSTOM_SSH_DIR" ]]; then
     echo "Warning: CUSTOM_SSH_DIR is set to '$CUSTOM_SSH_DIR' but directory not found."
     echo "SSH directory setup skipped. Create the directory or update CUSTOM_SSH_DIR."
-  elif [ ! -f ~/.zshrc_ssh_configured ]; then
+  elif [ ! -f ~/.bootstrapped/ssh ]; then
     # Set proper SSH permissions
     chmod 700 "$CUSTOM_SSH_DIR"
 
@@ -242,9 +288,44 @@ if [[ -n "$CUSTOM_SSH_DIR" ]]; then
     ln -sfn "$CUSTOM_SSH_DIR" ~/.ssh
 
     # Create flag file
-    touch ~/.zshrc_ssh_configured
+    touch ~/.bootstrapped/ssh
     echo "SSH directory configured: ~/.ssh -> $CUSTOM_SSH_DIR"
     echo "Permissions set: directory=700, private keys=600, public keys=644"
+  fi
+fi
+
+# ----------------------------------------------------------------------------
+# Custom Bin Directory Setup (Bootstrap Phase)
+# Consumes CUSTOM_BIN_DIR from customization section
+# Creates symlink from ~/.bin to custom directory and adds to PATH
+# --------
+
+if [[ -n "$CUSTOM_BIN_DIR" ]]; then
+  if [[ ! -d "$CUSTOM_BIN_DIR" ]]; then
+    echo "Warning: CUSTOM_BIN_DIR is set to '$CUSTOM_BIN_DIR' but directory not found."
+    echo "Custom bin directory setup skipped. Create the directory or update CUSTOM_BIN_DIR."
+  elif [ ! -f ~/.bootstrapped/bin ]; then
+    # Set proper bin directory permissions
+    chmod 755 "$CUSTOM_BIN_DIR"
+
+    # Set permissions for executable files (if they exist)
+    if ls "$CUSTOM_BIN_DIR"/* &>/dev/null 2>&1; then
+      chmod 755 "$CUSTOM_BIN_DIR"/*
+    fi
+
+    # Backup existing ~/.bin if it's not a symlink
+    if [[ -d ~/.bin ]] && [[ ! -L ~/.bin ]]; then
+      mv ~/.bin ~/.bin.backup.$(date +%Y%m%d_%H%M%S)
+      echo "Backed up existing ~/.bin to ~/.bin.backup.*"
+    fi
+
+    # Create symlink from ~/.bin to custom directory
+    ln -sfn "$CUSTOM_BIN_DIR" ~/.bin
+
+    # Create flag file
+    touch ~/.bootstrapped/bin
+    echo "Custom bin directory configured: ~/.bin -> $CUSTOM_BIN_DIR"
+    echo "Permissions set: directory=755, executables=755"
   fi
 fi
 
@@ -352,18 +433,23 @@ autoload -Uz colors && colors
 export EDITOR='vim'
 export VISUAL='vim'
 
-# Consolidate PATH setup
-if [[ -d /opt/homebrew ]]; then
-  export PATH="/opt/homebrew/bin:/opt/homebrew/sbin:$PATH"
+# Consolidate PATH setup - avoid duplicates
+# Homebrew is already added via shellenv, so we only add custom directories
+typeset -U path  # Remove duplicate entries from path array
+
+if [[ -d ~/.bin ]]; then
+  path=("$HOME/.bin" $path)
 fi
 
 if [[ -d "$HOME/bin" ]]; then
-  export PATH="$HOME/bin:$PATH"
+  path=("$HOME/bin" $path)
 fi
 
 if [[ -d "$HOME/.local/bin" ]]; then
-  export PATH="$HOME/.local/bin:$PATH"
+  path=("$HOME/.local/bin" $path)
 fi
+
+export PATH
 
 # ----------------------------------------------------------------------------
 # Prompt Functions

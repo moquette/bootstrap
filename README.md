@@ -15,6 +15,8 @@ That's it. On a fresh macOS system, this will:
 - Install Homebrew (if needed, requires password)
 - Install packages from your `ESSENTIAL_PACKAGES` list
 - Configure macOS system defaults from your `MACOS_DEFAULTS` array
+- Setup SSH keys from cloud storage (if `CUSTOM_SSH_DIR` is configured)
+- Setup custom bin directory with personal scripts (if `CUSTOM_BIN_DIR` is configured)
 - Enable fuzzy history search, git-aware prompt, and more
 
 ## What's Included
@@ -23,9 +25,10 @@ That's it. On a fresh macOS system, this will:
 
 - **Vim Config**: Your customized editor settings from `VIM_CONFIG`
 - **Homebrew**: Auto-installs if missing, with PATH configuration
-- **Essential Packages**: Installs packages from your `ESSENTIAL_PACKAGES` array (fzf by default)
-- **macOS Defaults**: Keyboard repeat, trackpad scaling, Finder preferences, Safari dev tools, etc.
+- **Essential Packages**: Installs packages from your `ESSENTIAL_PACKAGES` array with smart change detection (re-installs when list changes)
+- **macOS Defaults**: Keyboard repeat, trackpad scaling, Finder preferences, Safari dev tools, etc. with smart change detection
 - **SSH Setup** (Optional): Link SSH keys from cloud storage if `CUSTOM_SSH_DIR` is set
+- **Custom Bin Directory** (Optional): Link personal scripts from cloud storage if `CUSTOM_BIN_DIR` is set, with priority PATH placement
 
 ### 📝 Configuration
 
@@ -96,11 +99,13 @@ All customization options are at the **top of `~/.zshrc`** in the **CUSTOMIZATIO
 2. **Essential Packages** (`ESSENTIAL_PACKAGES` array)
    - Add or remove Homebrew packages to install
    - Set to empty array to skip package installation
-   - Example: Add `ripgrep` by adding `ripgrep` to the array
+   - **Smart detection**: Adding/removing packages automatically triggers re-installation on next shell startup
+   - Example: Add `ripgrep` by adding `ripgrep # Description` to the array
 
 3. **macOS Defaults** (`MACOS_DEFAULTS` array)
    - Keyboard repeat, trackpad sensitivity, Finder preferences, Safari dev tools, etc.
    - Comment out any `defaults write` line to skip that setting
+   - **Smart detection**: Modifying the list automatically re-applies on next shell startup
    - Each line is easy to understand and modify
 
 4. **Shell Aliases** (defined directly at the top in CUSTOMIZATION SECTION)
@@ -108,24 +113,58 @@ All customization options are at the **top of `~/.zshrc`** in the **CUSTOMIZATIO
    - Edit the alias definitions directly—just copy/paste new lines
    - To add a new alias: `alias myname='my command'`
    - To modify an existing alias: change the command after the `=` sign
+   - Changes take effect on next shell startup (sourced from file)
 
 5. **SSH Keys** (`CUSTOM_SSH_DIR` variable - optional)
    - Set this to link SSH keys from cloud storage (Dropbox, iCloud, etc.)
    - Leave blank to skip SSH setup
+   - One-time setup: creates symlink, sets permissions, backs up existing `~/.ssh`
    - Examples:
      - `CUSTOM_SSH_DIR="$HOME/Dropbox/ssh_keys"`
      - `CUSTOM_SSH_DIR="$HOME/Library/Mobile Documents/com~apple~CloudDocs/ssh_keys"`
-   - Auto-creates symlink, sets permissions, backs up existing `~/.ssh`
+
+6. **Custom Bin Directory** (`CUSTOM_BIN_DIR` variable - optional)
+   - Set this to link personal scripts from cloud storage (Dropbox, iCloud, etc.)
+   - Leave blank to skip custom bin setup
+   - One-time setup: creates symlink, sets permissions (755), backs up existing `~/.bin`
+   - **Priority in PATH**: `~/.bin` is added to PATH first for script priority
+   - Examples:
+     - `CUSTOM_BIN_DIR="$HOME/Dropbox/bin"`
+     - `CUSTOM_BIN_DIR="$HOME/Library/Mobile Documents/com~apple~CloudDocs/bin"`
+   - Scripts in this folder become available as commands immediately
 
 ## Automation & Bootstrap Flags
 
-The script uses flag files to prevent re-running setup steps:
+Bootstrap uses a state directory `~/.bootstrapped/` to track which setup steps have been completed. Each step uses smart change detection:
 
-- `~/.zshrc_packages_installed` - Homebrew packages
-- `~/.zshrc_macos_configured` - macOS defaults
-- `~/.zshrc_ssh_configured` - SSH symlink setup
+- **`~/.bootstrapped/packages`** - Package list signature
+  - Automatically re-runs when you add/remove packages from `ESSENTIAL_PACKAGES`
+  - Only installs packages that are missing
+  
+- **`~/.bootstrapped/macos`** - macOS defaults signature
+  - Automatically re-runs when you add/remove/modify entries in `MACOS_DEFAULTS`
+  - Re-applies all configured defaults
+  
+- **`~/.bootstrapped/ssh`** - SSH setup flag
+  - One-time setup (no re-run needed unless manually deleted)
+  
+- **`~/.bootstrapped/bin`** - Custom bin setup flag
+  - One-time setup (no re-run needed unless manually deleted)
 
-Delete these files to re-run that phase.
+**To reset a specific component**, delete the corresponding flag file:
+
+```bash
+rm ~/.bootstrapped/packages    # Re-run package installation on next shell
+rm ~/.bootstrapped/macos       # Re-run macOS defaults on next shell
+rm ~/.bootstrapped/ssh         # Re-run SSH setup on next shell
+rm ~/.bootstrapped/bin         # Re-run bin setup on next shell
+```
+
+**To reset everything:**
+
+```bash
+rm -rf ~/.bootstrapped
+```
 
 ## System Requirements
 
@@ -145,11 +184,25 @@ Delete these files to re-run that phase.
 
 ```text
 bootstrap/
-├── .zshrc                  # Main configuration
+├── .zshrc                  # Main configuration (single-file design)
 ├── .editorconfig           # Editor consistency rules
 ├── .gitignore              # Git ignore rules
 ├── README.md               # Documentation
-└── LICENSE                 # MIT License
+├── LICENSE                 # MIT License
+└── .github/
+    └── copilot-instructions.md  # Development guidelines
+```
+
+## Bootstrap State Directory
+
+On first run, Bootstrap creates `~/.bootstrapped/` to track setup state:
+
+```text
+~/.bootstrapped/
+├── packages               # Package list signature (smart detection)
+├── macos                  # macOS defaults signature (smart detection)
+├── ssh                    # SSH symlink setup flag
+└── bin                    # Custom bin setup flag
 ```
 
 ## What Gets Modified
@@ -160,10 +213,11 @@ First run creates/modifies:
 - `~/.vimrc` - Created if missing
 - `~/.zprofile` - Adds Homebrew shellenv (if needed)
 - `~/.zsh/cache/` - Completion cache (auto-created)
-- `~/.zshrc_*` - Flag files (prevent re-running setup)
+- `~/.bootstrapped/` - State directory with signature files
 
-Optional:
+Optional (if configured):
 
+- `~/.bin` - Symlinked to `$CUSTOM_BIN_DIR` if set
 - `~/.ssh` - Symlinked to `$CUSTOM_SSH_DIR` if set
 
 ## License
