@@ -10,11 +10,12 @@ curl -fsSL https://raw.githubusercontent.com/moquette/bootstrap/main/.zshrc -o ~
 
 That's it. On a fresh macOS system, this will:
 
-- Create `.hushlogin` (suppress login banner)
+- Create `.hushlogin` (suppress login banner) - *optional, uncomment in customization to enable*
 - Generate `.vimrc` with your customized settings
 - Install Homebrew (if needed, requires password)
 - Install packages from your `ESSENTIAL_PACKAGES` list
 - Configure macOS system defaults from your `MACOS_DEFAULTS` array
+- Setup git user name, email, and credential helper (if configured)
 - Setup SSH keys from cloud storage (if `CUSTOM_SSH_DIR` is configured)
 - Setup custom bin directory with personal scripts (if `CUSTOM_BIN_DIR` is configured)
 - Enable fuzzy history search, git-aware prompt, and more
@@ -27,6 +28,7 @@ That's it. On a fresh macOS system, this will:
 - **Homebrew**: Auto-installs if missing, with PATH configuration
 - **Essential Packages**: Installs packages from your `ESSENTIAL_PACKAGES` array with smart change detection (re-installs when list changes)
 - **macOS Defaults**: Keyboard repeat, trackpad scaling, Finder preferences, Safari dev tools, etc. with smart change detection
+- **Git Configuration** (Optional): Sets user name, email, and credential helper if `GIT_AUTHOR_NAME`, `GIT_AUTHOR_EMAIL`, or `GIT_CREDENTIAL_HELPER` are configured
 - **SSH Setup** (Optional): Link SSH keys from cloud storage if `CUSTOM_SSH_DIR` is set
 - **Custom Bin Directory** (Optional): Link personal scripts from cloud storage if `CUSTOM_BIN_DIR` is set, with priority PATH placement
 
@@ -91,31 +93,27 @@ All customization options are at the **top of `~/.zshrc`** in the **CUSTOMIZATIO
 
 ### Configuration Sections
 
-1. **Vim Configuration** (`VIM_CONFIG` string)
-   - Customize editor settings (tabs, line numbers, search options, etc.)
-   - These settings are written to `~/.vimrc` on first run
-   - Modify any vim setting to your preferences
+1. **Git Configuration** (`GIT_AUTHOR_NAME`, `GIT_AUTHOR_EMAIL`, `GIT_CREDENTIAL_HELPER` variables - optional)
+   - Set these to auto-configure git on first run
+   - Leave all blank to skip git setup
+   - `GIT_AUTHOR_NAME` - Your git commit author name (e.g., "John Doe")
+   - `GIT_AUTHOR_EMAIL` - Your git commit author email (e.g., john at example dot com)
+   - `GIT_CREDENTIAL_HELPER` - Credential storage method:
+     - `"osxkeychain"` - Recommended for macOS (built-in, secure)
+     - `"store"` - Simple file-based storage (less secure)
+     - `"manager"` - Git Credential Manager (requires installation)
+     - Leave empty to skip credential helper setup
+   - One-time setup: runs `git config --global` commands to set values
+   - Safe to run multiple times (idempotent - later runs overwrite with same values)
+   - Example configuration:
 
-2. **Essential Packages** (`ESSENTIAL_PACKAGES` array)
-   - Add or remove Homebrew packages to install
-   - Set to empty array to skip package installation
-   - **Smart detection**: Adding/removing packages automatically triggers re-installation on next shell startup
-   - Example: Add `ripgrep` by adding `ripgrep # Description` to the array
+     ```bash
+     GIT_AUTHOR_NAME="Jane Smith"
+     GIT_AUTHOR_EMAIL="jane@company.com"
+     GIT_CREDENTIAL_HELPER="osxkeychain"
+     ```
 
-3. **macOS Defaults** (`MACOS_DEFAULTS` array)
-   - Keyboard repeat, trackpad sensitivity, Finder preferences, Safari dev tools, etc.
-   - Comment out any `defaults write` line to skip that setting
-   - **Smart detection**: Modifying the list automatically re-applies on next shell startup
-   - Each line is easy to understand and modify
-
-4. **Shell Aliases** (defined directly at the top in CUSTOMIZATION SECTION)
-   - Navigation, file listing, and utility aliases
-   - Edit the alias definitions directly—just copy/paste new lines
-   - To add a new alias: `alias myname='my command'`
-   - To modify an existing alias: change the command after the `=` sign
-   - Changes take effect on next shell startup (sourced from file)
-
-5. **SSH Keys** (`CUSTOM_SSH_DIR` variable - optional)
+2. **SSH Keys** (`CUSTOM_SSH_DIR` variable - optional)
    - Set this to link SSH keys from cloud storage (Dropbox, iCloud, etc.)
    - Leave blank to skip SSH setup
    - One-time setup: creates symlink, sets permissions, backs up existing `~/.ssh`
@@ -123,7 +121,7 @@ All customization options are at the **top of `~/.zshrc`** in the **CUSTOMIZATIO
      - `CUSTOM_SSH_DIR="$HOME/Dropbox/ssh_keys"`
      - `CUSTOM_SSH_DIR="$HOME/Library/Mobile Documents/com~apple~CloudDocs/ssh_keys"`
 
-6. **Custom Bin Directory** (`CUSTOM_BIN_DIR` variable - optional)
+3. **Custom Bin Directory** (`CUSTOM_BIN_DIR` variable - optional)
    - Set this to link personal scripts from cloud storage (Dropbox, iCloud, etc.)
    - Leave blank to skip custom bin setup
    - One-time setup: creates symlink, sets permissions (755), backs up existing `~/.bin`
@@ -132,6 +130,35 @@ All customization options are at the **top of `~/.zshrc`** in the **CUSTOMIZATIO
      - `CUSTOM_BIN_DIR="$HOME/Dropbox/bin"`
      - `CUSTOM_BIN_DIR="$HOME/Library/Mobile Documents/com~apple~CloudDocs/bin"`
    - Scripts in this folder become available as commands immediately
+
+4. **Essential Packages** (`ESSENTIAL_PACKAGES` array)
+   - Add or remove Homebrew packages to install
+   - Set to empty array to skip package installation
+   - **Smart detection**: Adding/removing packages automatically triggers re-installation on next shell startup
+   - Example: Add `ripgrep` by adding `ripgrep # Description` to the array
+
+5. **Hushlogin** (Optional - commented by default)
+   - Uncomment the line to suppress the macOS login message
+   - Creates `~/.hushlogin` on first run when uncommented
+   - Line in CUSTOMIZATION SECTION: `[ -f ~/.hushlogin ] || { touch ~/.hushlogin && echo '~/.hushlogin created.'; }`
+
+6. **Shell Aliases** (defined directly at the top in CUSTOMIZATION SECTION)
+   - Navigation, file listing, and utility aliases
+   - Edit the alias definitions directly—just copy/paste new lines
+   - To add a new alias: `alias myname='my command'`
+   - To modify an existing alias: change the command after the `=` sign
+   - Changes take effect on next shell startup (sourced from file)
+
+7. **Vim Configuration** (`VIM_CONFIG` string)
+   - Customize editor settings (tabs, line numbers, search options, etc.)
+   - These settings are written to `~/.vimrc` on first run
+   - Modify any vim setting to your preferences
+
+8. **macOS Defaults** (`MACOS_DEFAULTS` array)
+   - Keyboard repeat, trackpad sensitivity, Finder preferences, Safari dev tools, etc.
+   - Comment out any `defaults write` line to skip that setting
+   - **Smart detection**: Modifying the list automatically re-applies on next shell startup
+   - Each line is easy to understand and modify
 
 ## Automation & Bootstrap Flags
 
@@ -209,7 +236,7 @@ On first run, Bootstrap creates `~/.bootstrapped/` to track setup state:
 
 First run creates/modifies:
 
-- `~/.hushlogin` - Created if missing
+- `~/.hushlogin` - Created if uncommented (suppress login banner) - *optional*
 - `~/.vimrc` - Created if missing
 - `~/.zprofile` - Adds Homebrew shellenv (if needed)
 - `~/.zsh/cache/` - Completion cache (auto-created)

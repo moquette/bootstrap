@@ -9,6 +9,78 @@
 # ============================================================================
 
 # ----------------------------------------------------------------------------
+# Git Configuration (Optional)
+# Set git user name, email, and credential helper
+# Leave blank to skip git setup
+# Examples:
+#   GIT_AUTHOR_NAME="John Doe"
+#   GIT_AUTHOR_EMAIL="john@example.com"
+#   GIT_CREDENTIAL_HELPER="osxkeychain"  # macOS default, or use "store", "manager"
+# On macOS, osxkeychain is built-in and recommended
+# Leave GIT_CREDENTIAL_HELPER empty to skip credential helper setup
+# ----------------------------------------------------------------------------
+GIT_AUTHOR_NAME=""
+GIT_AUTHOR_EMAIL=""
+GIT_CREDENTIAL_HELPER="osxkeychain"
+
+# ----------------------------------------------------------------------------
+# SSH Configuration (Optional)
+# Set to your preferred location to symlink SSH keys from cloud storage
+# Examples:
+#   CUSTOM_SSH_DIR="$HOME/Dropbox/ssh_keys"
+#   CUSTOM_SSH_DIR="$HOME/Library/Mobile Documents/com~apple~CloudDocs/ssh_keys"
+# Leave blank to skip SSH setup
+# ----------------------------------------------------------------------------
+CUSTOM_SSH_DIR=""
+
+# ----------------------------------------------------------------------------
+# Custom Bin Directory (Optional)
+# Set to your preferred location to symlink personal scripts/binaries from cloud storage
+# Examples:
+#   CUSTOM_BIN_DIR="$HOME/Dropbox/bin"
+#   CUSTOM_BIN_DIR="$HOME/Library/Mobile Documents/com~apple~CloudDocs/bin"
+# Leave blank to skip custom bin setup
+# Note: ~/.bin will be added to PATH with priority over system directories
+# ----------------------------------------------------------------------------
+CUSTOM_BIN_DIR=""
+
+# ----------------------------------------------------------------------------
+# Essential Packages to Install via Homebrew
+# Add or remove packages as needed. Set to empty array to skip installation.
+# ----------------------------------------------------------------------------
+ESSENTIAL_PACKAGES=(
+  node        # JavaScript runtime
+  fzf         # Fuzzy finder for better history search
+)
+
+# ----------------------------------------------------------------------------
+# Hushlogin - Suppress macOS login message
+# Uncomment the line below to enable (creates ~/.hushlogin on first run)
+# ----------------------------------------------------------------------------
+# [ -f ~/.hushlogin ] || { touch ~/.hushlogin && echo '~/.hushlogin created.'; }
+
+# ----------------------------------------------------------------------------
+# Shell Aliases - Customize to your preferences
+# Edit these alias definitions directly. Format: alias name='command'
+# To add a new alias, add a line like: alias myalias='my command'
+# To modify an alias, change the value after the = sign
+# Common pattern: alias short_name='actual command you want to run'
+alias .='cd ~'
+alias ..='..'
+alias ls='ls -lh'
+alias l='ls -lh'
+alias la='ls -lAh'
+alias ld='ls -lah | grep "^d"'
+alias lf='ls -lah | grep "^-"'
+alias ll='ls -lah | grep "^l"'
+alias lh='ls -ldh .*'
+alias l.='ls -ldh .*'
+alias c='clear'
+alias r='clear && exec zsh'
+alias x='exit'
+alias ea='vim ~/.zshrc'
+
+# ----------------------------------------------------------------------------
 # Vim Configuration
 # Customize these settings to match your preferences
 # These settings will be written to ~/.vimrc on first run
@@ -41,15 +113,6 @@ set mouse=a             " Enable mouse support
 syntax on               " Enable syntax highlighting
 filetype plugin indent on  " Enable filetype detection
 '
-
-# ----------------------------------------------------------------------------
-# Essential Packages to Install via Homebrew
-# Add or remove packages as needed. Set to empty array to skip installation.
-# ----------------------------------------------------------------------------
-ESSENTIAL_PACKAGES=(
-  node        # JavaScript runtime
-  fzf         # Fuzzy finder for better history search
-)
 
 # ----------------------------------------------------------------------------
 # macOS Defaults Configuration
@@ -91,57 +154,9 @@ MACOS_DEFAULTS=(
   "defaults write com.apple.TextEdit RichText -int 0"
 )
 
-# ----------------------------------------------------------------------------
-# SSH Configuration (Optional)
-# Set to your preferred location to symlink SSH keys from cloud storage
-# Examples:
-#   CUSTOM_SSH_DIR="$HOME/Dropbox/ssh_keys"
-#   CUSTOM_SSH_DIR="$HOME/Library/Mobile Documents/com~apple~CloudDocs/ssh_keys"
-# Leave blank to skip SSH setup
-# ----------------------------------------------------------------------------
-CUSTOM_SSH_DIR=""
-
-# ----------------------------------------------------------------------------
-# Custom Bin Directory (Optional)
-# Set to your preferred location to symlink personal scripts/binaries from cloud storage
-# Examples:
-#   CUSTOM_BIN_DIR="$HOME/Dropbox/bin"
-#   CUSTOM_BIN_DIR="$HOME/Library/Mobile Documents/com~apple~CloudDocs/bin"
-# Leave blank to skip custom bin setup
-# Note: ~/.bin will be added to PATH with priority over system directories
-# ----------------------------------------------------------------------------
-CUSTOM_BIN_DIR=""
-
-# ----------------------------------------------------------------------------
-# Shell Aliases - Customize to your preferences
-# Edit these alias definitions directly. Format: alias name='command'
-# To add a new alias, add a line like: alias myalias='my command'
-# To modify an alias, change the value after the = sign
-# Common pattern: alias short_name='actual command you want to run'
-alias .='cd ~'
-alias ..='..'
-alias ls='ls -lh'
-alias l='ls -lh'
-alias la='ls -lAh'
-alias ld='ls -lah | grep "^d"'
-alias lf='ls -lah | grep "^-"'
-alias ll='ls -lah | grep "^l"'
-alias lh='ls -ldh .*'
-alias l.='ls -ldh .*'
-alias c='clear'
-alias r='clear && exec zsh'
-alias x='exit'
-alias ea='vim ~/.zshrc'
-
 # ============================================================================
 # END OF CUSTOMIZATION SECTION
 # ============================================================================
-
-
-# ----------------------------------------------------------------------------
-# Hushlogin
-# ----------------------------------------------------------------------------
-[ -f ~/.hushlogin ] || { touch ~/.hushlogin && echo '~/.hushlogin created.'; }
 
 # ----------------------------------------------------------------------------
 # Bootstrap State Directory
@@ -327,6 +342,34 @@ if [[ -n "$CUSTOM_BIN_DIR" ]]; then
     echo "Custom bin directory configured: ~/.bin -> $CUSTOM_BIN_DIR"
     echo "Permissions set: directory=755, executables=755"
   fi
+fi
+
+# ----------------------------------------------------------------------------
+# Git Configuration Setup (Bootstrap Phase)
+# Consumes GIT_AUTHOR_NAME, GIT_AUTHOR_EMAIL, GIT_CREDENTIAL_HELPER from customization section
+# Only runs if at least name or email is set (both required for meaningful git config)
+# Idempotent: safe to run multiple times (git config overwrites existing values)
+# --------
+
+if (( ${+commands[git]} )) && ([[ -n "$GIT_AUTHOR_NAME" ]] || [[ -n "$GIT_AUTHOR_EMAIL" ]]); then
+  echo "Configuring git..."
+  
+  if [[ -n "$GIT_AUTHOR_NAME" ]]; then
+    git config --global user.name "$GIT_AUTHOR_NAME"
+    echo "  Set git user.name to: $GIT_AUTHOR_NAME"
+  fi
+  
+  if [[ -n "$GIT_AUTHOR_EMAIL" ]]; then
+    git config --global user.email "$GIT_AUTHOR_EMAIL"
+    echo "  Set git user.email to: $GIT_AUTHOR_EMAIL"
+  fi
+  
+  if [[ -n "$GIT_CREDENTIAL_HELPER" ]]; then
+    git config --global credential.helper "$GIT_CREDENTIAL_HELPER"
+    echo "  Set git credential.helper to: $GIT_CREDENTIAL_HELPER"
+  fi
+  
+  echo "Git configuration complete."
 fi
 
 # ----------------------------------------------------------------------------
