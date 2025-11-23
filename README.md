@@ -167,14 +167,18 @@ Bootstrap uses a state directory `~/.bootstrapped/` to track which setup steps h
 - **`~/.bootstrapped/packages`** - Package list signature
   - Automatically re-runs when you add/remove packages from `ESSENTIAL_PACKAGES`
   - Only installs packages that are missing
-  
+
 - **`~/.bootstrapped/macos`** - macOS defaults signature
   - Automatically re-runs when you add/remove/modify entries in `MACOS_DEFAULTS`
   - Re-applies all configured defaults
-  
+
+- **`~/.bootstrapped/git`** - Git configuration signature
+  - Automatically re-runs when you change `GIT_AUTHOR_NAME`, `GIT_AUTHOR_EMAIL`, or `GIT_CREDENTIAL_HELPER`
+  - Re-applies git config with updated values
+
 - **`~/.bootstrapped/ssh`** - SSH setup flag
   - One-time setup (no re-run needed unless manually deleted)
-  
+
 - **`~/.bootstrapped/bin`** - Custom bin setup flag
   - One-time setup (no re-run needed unless manually deleted)
 
@@ -183,6 +187,7 @@ Bootstrap uses a state directory `~/.bootstrapped/` to track which setup steps h
 ```bash
 rm ~/.bootstrapped/packages    # Re-run package installation on next shell
 rm ~/.bootstrapped/macos       # Re-run macOS defaults on next shell
+rm ~/.bootstrapped/git         # Re-run git configuration on next shell
 rm ~/.bootstrapped/ssh         # Re-run SSH setup on next shell
 rm ~/.bootstrapped/bin         # Re-run bin setup on next shell
 ```

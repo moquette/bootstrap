@@ -348,28 +348,44 @@ fi
 # Git Configuration Setup (Bootstrap Phase)
 # Consumes GIT_AUTHOR_NAME, GIT_AUTHOR_EMAIL, GIT_CREDENTIAL_HELPER from customization section
 # Only runs if at least name or email is set (both required for meaningful git config)
+# Smart detection: re-runs if git variables change (similar to packages and macOS defaults)
 # Idempotent: safe to run multiple times (git config overwrites existing values)
 # --------
 
 if (( ${+commands[git]} )) && ([[ -n "$GIT_AUTHOR_NAME" ]] || [[ -n "$GIT_AUTHOR_EMAIL" ]]); then
-  echo "Configuring git..."
+  # Create a signature of the current git config
+  local git_signature="${GIT_AUTHOR_NAME}|${GIT_AUTHOR_EMAIL}|${GIT_CREDENTIAL_HELPER}"
+  local git_flag="$HOME/.bootstrapped/git"
+  local stored_signature=""
   
-  if [[ -n "$GIT_AUTHOR_NAME" ]]; then
-    git config --global user.name "$GIT_AUTHOR_NAME"
-    echo "  Set git user.name to: $GIT_AUTHOR_NAME"
+  # Read stored signature if it exists
+  if [ -f "$git_flag" ]; then
+    stored_signature=$(cat "$git_flag")
   fi
   
-  if [[ -n "$GIT_AUTHOR_EMAIL" ]]; then
-    git config --global user.email "$GIT_AUTHOR_EMAIL"
-    echo "  Set git user.email to: $GIT_AUTHOR_EMAIL"
+  # Configure if signature changed (user updated git config) or flag doesn't exist
+  if [ "$git_signature" != "$stored_signature" ]; then
+    echo "Configuring git..."
+    
+    if [[ -n "$GIT_AUTHOR_NAME" ]]; then
+      git config --global user.name "$GIT_AUTHOR_NAME"
+      echo "  Set git user.name to: $GIT_AUTHOR_NAME"
+    fi
+    
+    if [[ -n "$GIT_AUTHOR_EMAIL" ]]; then
+      git config --global user.email "$GIT_AUTHOR_EMAIL"
+      echo "  Set git user.email to: $GIT_AUTHOR_EMAIL"
+    fi
+    
+    if [[ -n "$GIT_CREDENTIAL_HELPER" ]]; then
+      git config --global --replace-all credential.helper "$GIT_CREDENTIAL_HELPER"
+      echo "  Set git credential.helper to: $GIT_CREDENTIAL_HELPER"
+    fi
+    
+    # Store the current signature to detect future changes
+    echo "$git_signature" > "$git_flag"
+    echo "Git configuration complete."
   fi
-  
-  if [[ -n "$GIT_CREDENTIAL_HELPER" ]]; then
-    git config --global credential.helper "$GIT_CREDENTIAL_HELPER"
-    echo "  Set git credential.helper to: $GIT_CREDENTIAL_HELPER"
-  fi
-  
-  echo "Git configuration complete."
 fi
 
 # ----------------------------------------------------------------------------
