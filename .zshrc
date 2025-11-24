@@ -82,26 +82,11 @@ ESSENTIAL_PACKAGES=(
 # [ -f ~/.hushlogin ] || { touch ~/.hushlogin && echo '~/.hushlogin created.'; }
 
 # ----------------------------------------------------------------------------
-# Shell Aliases - Customize to your preferences
-# Edit these alias definitions directly. Format: alias name='command'
-# To add a new alias, add a line like: alias myalias='my command'
-# To modify an alias, change the value after the = sign
-# Common pattern: alias short_name='actual command you want to run'
-alias .='cd ~'
-alias ..='..'
-alias ls='ls -lh'
-alias l='ls -lh'
-alias la='ls -lAh'
-alias ld='ls -lah | grep "^d"'
-alias lf='ls -lah | grep "^-"'
-alias ll='ls -lah | grep "^l"'
-alias lh='ls -ldh .*'
-alias l.='ls -ldh .*'
-alias c='clear'
-alias r='clear && exec zsh'
-alias x='exit'
-alias ea='vim ~/.zshrc'
-alias pubkey="more ~/.ssh/id_rsa.pub | pbcopy | echo '=> Public key copied to pasteboard.'"
+# Shell Aliases
+# Aliases are now sourced from ~/.aliases (symlinked to cloud storage).
+# Edit aliases.txt in your cloud storage to customize.
+# See: $CLOUD_FOLDER/system/aliases.txt
+# ----------------------------------------------------------------------------
 
 # ----------------------------------------------------------------------------
 # macOS Defaults Configuration
