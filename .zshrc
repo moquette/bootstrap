@@ -21,21 +21,34 @@ GIT_AUTHOR_NAME="Joaquin A. Moquette"
 GIT_AUTHOR_EMAIL="moquette@gmail.com"
 
 # ----------------------------------------------------------------------------
+# Cloud Storage Base Directory (Optional)
+# Set to your primary cloud storage location for easy symlink configuration
+# Examples:
+#   CLOUD_FOLDER="/Volumes/My Shared Files/mycloud"
+#   CLOUD_FOLDER="$HOME/Dropbox"
+#   CLOUD_FOLDER="$HOME/iCloud Drive"
+# Leave blank to use full paths in CUSTOM_SYMLINKS instead
+# ----------------------------------------------------------------------------
+CLOUD_FOLDER="/Volumes/My Shared Files/mycloud"
+
+# ----------------------------------------------------------------------------
 # Custom Symlinks (Optional)
 # Set up file/directory symlinks from cloud storage using format:
 #   CUSTOM_SYMLINKS=("source|target" "source|target" ...)
+# Use $CLOUD_FOLDER to reference your cloud storage base directory
 # 
 # Examples - SSH keys (one-time setup):
+#   "$CLOUD_FOLDER/ssh|~/.ssh"
 #   "~/Dropbox/ssh_keys|~/.ssh"
 #   "~/Library/Mobile Documents/com~apple~CloudDocs/ssh_keys|~/.ssh"
 #
 # Examples - Personal scripts/binaries (added to PATH):
-#   "~/Dropbox/bin|~/.bin"             # ~/.bin added to PATH with priority
+#   "$CLOUD_FOLDER/bin|~/.bin"         # ~/.bin added to PATH with priority
 #
 # Examples - Dotfiles:
-#   "~/.config/shell/zprofile|~/.zprofile"
-#   "~/.config/git/config|~/.gitconfig"
-#   "~/.config/tmux/tmuxconf|~/.tmuxconf"
+#   "$CLOUD_FOLDER/system/zprofile.zsh|~/.zprofile"
+#   "$CLOUD_FOLDER/git/config|~/.gitconfig"
+#   "$CLOUD_FOLDER/tmux/tmuxconf|~/.tmuxconf"
 #
 # Behavior:
 #   - Existing files/directories backed up to *.backup.<timestamp>
@@ -46,9 +59,9 @@ GIT_AUTHOR_EMAIL="moquette@gmail.com"
 # Leave empty array to skip symlink setup
 # ----------------------------------------------------------------------------
 CUSTOM_SYMLINKS=(
-  "/Volumes/My Shared Files/mycloud/ssh|~/.ssh"
-  "/Volumes/My Shared Files/mycloud/bin|~/.bin"
-  "/Volumes/My Shared Files/mycloud/system/zprofile.zsh|~/.zprofile"
+  "$CLOUD_FOLDER/ssh|~/.ssh"
+  "$CLOUD_FOLDER/bin|~/.bin"
+  "$CLOUD_FOLDER/system/zprofile.zsh|~/.zprofile"
 )
 
 # ----------------------------------------------------------------------------
