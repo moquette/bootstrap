@@ -62,6 +62,8 @@ CUSTOM_SYMLINKS=(
   "$CLOUD_FOLDER/ssh|~/.ssh"
   "$CLOUD_FOLDER/bin|~/.bin"
   "$CLOUD_FOLDER/system/zprofile.zsh|~/.zprofile"
+  "$CLOUD_FOLDER/system/vimrc.txt|~/.vimrc"
+  "$CLOUD_FOLDER/system/aliases.txt|~/.aliases"
 )
 
 # ----------------------------------------------------------------------------
@@ -100,41 +102,6 @@ alias r='clear && exec zsh'
 alias x='exit'
 alias ea='vim ~/.zshrc'
 alias pubkey="more ~/.ssh/id_rsa.pub | pbcopy | echo '=> Public key copied to pasteboard.'"
-
-
-# ----------------------------------------------------------------------------
-# Vim Configuration
-# Customize these settings to match your preferences
-# These settings will be written to ~/.vimrc on first run
-# ----------------------------------------------------------------------------
-VIM_CONFIG='
-" Basic Settings
-set number              " Show line numbers
-set relativenumber      " Show relative line numbers
-set cursorline          " Highlight current line
-set ruler               " Show cursor position
-set showcmd             " Show command in bottom bar
-set wildmenu            " Visual autocomplete for command menu
-set showmatch           " Highlight matching brackets
-set incsearch           " Search as characters are entered
-set hlsearch            " Highlight search matches
-set ignorecase          " Case insensitive search
-set smartcase           " Case sensitive when uppercase present
-set autoindent          " Auto indent
-set smartindent         " Smart indent
-set expandtab           " Use spaces instead of tabs
-set tabstop=4           " Number of spaces per tab
-set shiftwidth=4        " Number of spaces for auto indent
-set softtabstop=4       " Number of spaces for tab in insert mode
-set wrap                " Wrap long lines
-set linebreak           " Break lines at word boundaries
-set scrolloff=5         " Keep 5 lines above/below cursor
-set backspace=indent,eol,start  " Backspace over everything
-set clipboard=unnamed   " Use system clipboard
-set mouse=a             " Enable mouse support
-syntax on               " Enable syntax highlighting
-filetype plugin indent on  " Enable filetype detection
-'
 
 # ----------------------------------------------------------------------------
 # macOS Defaults Configuration
@@ -310,14 +277,6 @@ _setup_symlink() {
 
 # Main bootstrap orchestration function
 _bootstrap() {
-  # Vim Configuration
-  if [ ! -f ~/.vimrc ]; then
-    cat > ~/.vimrc << EOF
-$VIM_CONFIG
-EOF
-    echo '~/.vimrc created with sensible defaults.'
-  fi
-
   # Homebrew Setup
   _setup_homebrew_path() {
     local brew_path
@@ -408,6 +367,13 @@ _bootstrap
 # Automatically source personal zprofile after bootstrap (so symlinks are in place)
 # This is optional and only runs if ~/.zprofile exists AND is readable
 [[ -r "$HOME/.zprofile" ]] && source "$HOME/.zprofile" 2>/dev/null || true
+
+# ============================================================================
+# SOURCE ALIASES IF AVAILABLE
+# ============================================================================
+# Auto-source custom aliases after bootstrap (so symlink is in place)
+# This is optional and only runs if ~/.aliases exists AND is readable
+[[ -r "$HOME/.aliases" ]] && source "$HOME/.aliases" 2>/dev/null || true
 
 # ----------------------------------------------------------------------------
 # History Configuration
