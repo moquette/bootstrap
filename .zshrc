@@ -181,6 +181,12 @@ _setup_symlink() {
   source="${symlink_entry%|*}"
   target="${symlink_entry#*|}"
   
+  # Check if source references $CLOUD_FOLDER but it's not set
+  if [[ "$source" == *'$CLOUD_FOLDER'* ]] && [[ -z "$CLOUD_FOLDER" ]]; then
+    _bootstrap_warning "Skipped: CLOUD_FOLDER not set, needed for: $source"
+    return 1
+  fi
+  
   # Expand ~ and variables in paths
   source="${source/\~/$HOME}"
   target="${target/\~/$HOME}"
@@ -259,6 +265,10 @@ _bootstrap() {
 
   # Custom Symlinks Setup (run early so Brewfile exists for bundle phase)
   if [ ${#CUSTOM_SYMLINKS[@]} -gt 0 ] && [ ! -f ~/.bootstrapped/symlinks ]; then
+    if [[ -z "$CLOUD_FOLDER" ]]; then
+      _bootstrap_info "CLOUD_FOLDER not set; only non-cloud symlinks will be processed"
+    fi
+    
     local failed_count=0
     for symlink_entry in "${CUSTOM_SYMLINKS[@]}"; do
       _setup_symlink "$symlink_entry" || ((failed_count++))
