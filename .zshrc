@@ -180,8 +180,8 @@ MACOS_DEFAULTS=(
 # END OF CUSTOMIZATION SECTION
 # ============================================================================
 
-# ----------------------------------------------------------------------------
-# Bootstrap Helper Functions
+# ============================================================================
+# BOOTSTRAP HELPER FUNCTIONS
 # Utility functions for bootstrap operations
 # --------
 
@@ -249,84 +249,9 @@ _set_ssh_permissions() {
 # ============================================================================
 
 # Bootstrap State Directory
-# Central location for all bootstrap signature files
-# --------
-[ -d ~/.bootstrapped ] || { mkdir -p ~/.bootstrapped && echo '~/.bootstrapped created.'; }
+mkdir -p ~/.bootstrapped
 
-# ----------------------------------------------------------------------------
-# Vim Configuration (Bootstrap Phase)
-# Consumes VIM_CONFIG from customization section
-# ----------------------------------------------------------------------------
-if [ ! -f ~/.vimrc ]; then
-  cat > ~/.vimrc << EOF
-$VIM_CONFIG
-EOF
-  echo '~/.vimrc created with sensible defaults.'
-fi
-
-# ----------------------------------------------------------------------------
-# Homebrew Setup
-# ----------------------------------------------------------------------------
-_setup_homebrew_path() {
-  local brew_path
-  [[ -x /opt/homebrew/bin/brew ]] && brew_path="/opt/homebrew/bin/brew" || brew_path="/usr/local/bin/brew"
-  
-  if ! grep -q "brew shellenv" ~/.zprofile 2>/dev/null; then
-    echo "" >> ~/.zprofile
-    echo "eval \"\$($brew_path shellenv)\"" >> ~/.zprofile
-  fi
-  
-  eval "$($brew_path shellenv)"
-}
-
-if [[ "$OSTYPE" == "darwin"* ]] && ! _has_command brew; then
-  if [[ -x /opt/homebrew/bin/brew ]] || [[ -x /usr/local/bin/brew ]]; then
-    _setup_homebrew_path
-  else
-    echo "Installing Homebrew..."
-    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-    _setup_homebrew_path
-    echo "Homebrew installed successfully."
-    brew analytics off 2>/dev/null
-    echo "Homebrew analytics disabled."
-  fi
-fi
-
-# ----------------------------------------------------------------------------
-# Essential Packages Auto-Install (Smart Detection)
-# Consumes ESSENTIAL_PACKAGES array from customization section
-# Automatically detects when packages are added/removed and re-installs
-# ----------------------------------------------------------------------------
-if _has_command brew && [ ${#ESSENTIAL_PACKAGES[@]} -gt 0 ]; then
-  local packages_signature="${ESSENTIAL_PACKAGES[*]}"
-  local packages_flag="$HOME/.bootstrapped/packages"
-  
-  if _check_signature "$packages_flag" "$packages_signature" 'echo "Installing essential packages..."; for package in "${ESSENTIAL_PACKAGES[@]}"; do if ! brew list "$package" &>/dev/null; then echo "  Installing $package..."; brew install "$package"; fi; done; echo "Essential packages installed."'; then
-    :
-  fi
-fi
-
-# ----------------------------------------------------------------------------
-# macOS Defaults Configuration (Bootstrap Phase)
-# Consumes MACOS_DEFAULTS array from customization section
-# Automatically detects when defaults are added/removed/modified and re-applies
-# Comment out lines in MACOS_DEFAULTS to skip specific settings
-# ----------------------------------------------------------------------------
-if [[ "$OSTYPE" == "darwin"* ]] && [ ${#MACOS_DEFAULTS[@]} -gt 0 ]; then
-  local defaults_signature="${MACOS_DEFAULTS[*]}"
-  local defaults_flag="$HOME/.bootstrapped/macos"
-  
-  if _check_signature "$defaults_flag" "$defaults_signature" 'echo "Configuring macOS defaults..."; for default_cmd in "${MACOS_DEFAULTS[@]}"; do eval "$default_cmd"; done; echo "macOS defaults configured. Restart apps for changes to take effect."'; then
-    :
-  fi
-fi
-
-# ----------------------------------------------------------------------------
-# Custom Symlinks Setup (Bootstrap Phase)
-# Consumes CUSTOM_SYMLINKS array from customization section
-# Helper function to create individual symlinks with backup and permission handling
-# --------
-
+# Symlink helper function (used by _bootstrap)
 _setup_symlink() {
   local symlink_entry="$1"
   local source target
@@ -383,47 +308,106 @@ _setup_symlink() {
   return 0
 }
 
-# Process custom symlinks on first run
-if [ ${#CUSTOM_SYMLINKS[@]} -gt 0 ] && [ ! -f ~/.bootstrapped/symlinks ]; then
-  echo "Setting up custom symlinks..."
-  
-  local failed_count=0
-  for symlink_entry in "${CUSTOM_SYMLINKS[@]}"; do
-    _setup_symlink "$symlink_entry" || ((failed_count++))
-  done
-  
-  # Create flag file to mark completion
-  touch ~/.bootstrapped/symlinks
-  
-  if [[ $failed_count -eq 0 ]]; then
-    echo "Custom symlinks configured successfully."
-  else
-    echo "Custom symlinks setup completed with $failed_count error(s). Check paths in CUSTOM_SYMLINKS."
+# Main bootstrap orchestration function
+_bootstrap() {
+  # Vim Configuration
+  if [ ! -f ~/.vimrc ]; then
+    cat > ~/.vimrc << EOF
+$VIM_CONFIG
+EOF
+    echo '~/.vimrc created with sensible defaults.'
   fi
-fi
 
-# Add ~/.bin to PATH if it exists (from symlinks or otherwise)
-if [[ -d ~/.bin ]] && [[ ! (" ${path[*]} " =~ " $HOME/.bin ") ]]; then
-  path=("$HOME/.bin" $path)
-  export PATH
-fi
+  # Homebrew Setup
+  _setup_homebrew_path() {
+    local brew_path
+    [[ -x /opt/homebrew/bin/brew ]] && brew_path="/opt/homebrew/bin/brew" || brew_path="/usr/local/bin/brew"
+    
+    if ! grep -q "brew shellenv" ~/.zprofile 2>/dev/null; then
+      echo "" >> ~/.zprofile
+      echo "eval \"\$($brew_path shellenv)\"" >> ~/.zprofile
+    fi
+    
+    eval "$($brew_path shellenv)"
+  }
 
-# ----------------------------------------------------------------------------
-# Git Configuration Setup (Bootstrap Phase)
-# Consumes GIT_AUTHOR_NAME, GIT_AUTHOR_EMAIL from customization section
-# Only runs if at least name or email is set
-# Smart detection: re-runs if git variables change (similar to packages and macOS defaults)
-# Credential helper is managed by the system (osxkeychain on macOS)
-# ----------------------------------------------------------------------------
-
-if _has_command git && ([[ -n "$GIT_AUTHOR_NAME" ]] || [[ -n "$GIT_AUTHOR_EMAIL" ]]); then
-  local git_signature="${GIT_AUTHOR_NAME}|${GIT_AUTHOR_EMAIL}"
-  local git_flag="$HOME/.bootstrapped/git"
-  
-  if _check_signature "$git_flag" "$git_signature" 'echo "Configuring git..."; [[ -n "$GIT_AUTHOR_NAME" ]] && git config --global user.name "$GIT_AUTHOR_NAME" && echo "  Set git user.name to: $GIT_AUTHOR_NAME"; [[ -n "$GIT_AUTHOR_EMAIL" ]] && git config --global user.email "$GIT_AUTHOR_EMAIL" && echo "  Set git user.email to: $GIT_AUTHOR_EMAIL"; echo "Git configuration complete."'; then
-    :
+  if [[ "$OSTYPE" == "darwin"* ]] && ! _has_command brew; then
+    if [[ -x /opt/homebrew/bin/brew ]] || [[ -x /usr/local/bin/brew ]]; then
+      _setup_homebrew_path
+    else
+      echo "Installing Homebrew..."
+      /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+      _setup_homebrew_path
+      echo "Homebrew installed successfully."
+      brew analytics off 2>/dev/null
+      echo "Homebrew analytics disabled."
+    fi
   fi
-fi
+
+  # Essential Packages Auto-Install
+  if _has_command brew && [ ${#ESSENTIAL_PACKAGES[@]} -gt 0 ]; then
+    local packages_signature="${ESSENTIAL_PACKAGES[*]}"
+    local packages_flag="$HOME/.bootstrapped/packages"
+    
+    if _check_signature "$packages_flag" "$packages_signature" 'echo "Installing essential packages..."; for package in "${ESSENTIAL_PACKAGES[@]}"; do if ! brew list "$package" &>/dev/null; then echo "  Installing $package..."; brew install "$package"; fi; done; echo "Essential packages installed."'; then
+      :
+    fi
+  fi
+
+  # macOS Defaults Configuration
+  if [[ "$OSTYPE" == "darwin"* ]] && [ ${#MACOS_DEFAULTS[@]} -gt 0 ]; then
+    local defaults_signature="${MACOS_DEFAULTS[*]}"
+    local defaults_flag="$HOME/.bootstrapped/macos"
+    
+    if _check_signature "$defaults_flag" "$defaults_signature" 'echo "Configuring macOS defaults..."; for default_cmd in "${MACOS_DEFAULTS[@]}"; do eval "$default_cmd"; done; echo "macOS defaults configured. Restart apps for changes to take effect."'; then
+      :
+    fi
+  fi
+
+  # Custom Symlinks Setup
+  if [ ${#CUSTOM_SYMLINKS[@]} -gt 0 ] && [ ! -f ~/.bootstrapped/symlinks ]; then
+    echo "Setting up custom symlinks..."
+    
+    local failed_count=0
+    for symlink_entry in "${CUSTOM_SYMLINKS[@]}"; do
+      _setup_symlink "$symlink_entry" || ((failed_count++))
+    done
+    
+    touch ~/.bootstrapped/symlinks
+    
+    if [[ $failed_count -eq 0 ]]; then
+      echo "Custom symlinks configured successfully."
+    else
+      echo "Custom symlinks setup completed with $failed_count error(s). Check paths in CUSTOM_SYMLINKS."
+    fi
+  fi
+
+  # Git Configuration
+  if _has_command git && ([[ -n "$GIT_AUTHOR_NAME" ]] || [[ -n "$GIT_AUTHOR_EMAIL" ]]); then
+    local git_signature="${GIT_AUTHOR_NAME}|${GIT_AUTHOR_EMAIL}"
+    local git_flag="$HOME/.bootstrapped/git"
+    
+    if _check_signature "$git_flag" "$git_signature" 'echo "Configuring git..."; [[ -n "$GIT_AUTHOR_NAME" ]] && git config --global user.name "$GIT_AUTHOR_NAME" && echo "  Set git user.name to: $GIT_AUTHOR_NAME"; [[ -n "$GIT_AUTHOR_EMAIL" ]] && git config --global user.email "$GIT_AUTHOR_EMAIL" && echo "  Set git user.email to: $GIT_AUTHOR_EMAIL"; echo "Git configuration complete."'; then
+      :
+    fi
+  fi
+
+  # Add ~/.bin to PATH if it exists
+  if [[ -d ~/.bin ]] && [[ ! (" ${path[*]} " =~ " $HOME/.bin ") ]]; then
+    path=("$HOME/.bin" $path)
+    export PATH
+  fi
+}
+
+# Run bootstrap on shell initialization
+_bootstrap
+
+# ============================================================================
+# SOURCE PERSONAL ZPROFILE IF IT EXISTS
+# ============================================================================
+# Automatically source personal zprofile after bootstrap (so symlinks are in place)
+# This is optional and only runs if ~/.zprofile exists AND is readable
+[[ -r "$HOME/.zprofile" ]] && source "$HOME/.zprofile" 2>/dev/null || true
 
 # ----------------------------------------------------------------------------
 # History Configuration
@@ -521,31 +505,6 @@ zstyle ':completion:*:approximate:*' max-errors 1 numeric
 
 # Load colors
 autoload -Uz colors && colors
-
-# ----------------------------------------------------------------------------
-# Environment Variables
-# ----------------------------------------------------------------------------
-# Default editor
-export EDITOR='vim'
-export VISUAL='vim'
-
-# Consolidate PATH setup - avoid duplicates
-# Homebrew is already added via shellenv, so we only add custom directories
-typeset -U path  # Remove duplicate entries from path array
-
-if [[ -d ~/.bin ]]; then
-  path=("$HOME/.bin" $path)
-fi
-
-if [[ -d "$HOME/bin" ]]; then
-  path=("$HOME/bin" $path)
-fi
-
-if [[ -d "$HOME/.local/bin" ]]; then
-  path=("$HOME/.local/bin" $path)
-fi
-
-export PATH
 
 # ----------------------------------------------------------------------------
 # Prompt Functions

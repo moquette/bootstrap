@@ -10,14 +10,12 @@ curl -fsSL https://raw.githubusercontent.com/moquette/bootstrap/main/.zshrc -o ~
 
 That's it. On a fresh macOS system, this will:
 
-- Create `.hushlogin` (suppress login banner) - *optional, uncomment in customization to enable*
 - Generate `.vimrc` with your customized settings
 - Install Homebrew (if needed, requires password)
 - Install packages from your `ESSENTIAL_PACKAGES` list
 - Configure macOS system defaults from your `MACOS_DEFAULTS` array
-- Setup git user name, email, and credential helper (if configured)
-- Setup SSH keys from cloud storage (if `CUSTOM_SSH_DIR` is configured)
-- Setup custom bin directory with personal scripts (if `CUSTOM_BIN_DIR` is configured)
+- Setup git user name and email (if configured)
+- Create custom symlinks for dotfiles, SSH keys, and scripts from cloud storage (if configured)
 - Enable fuzzy history search, git-aware prompt, and more
 
 ## What's Included
@@ -28,9 +26,8 @@ That's it. On a fresh macOS system, this will:
 - **Homebrew**: Auto-installs if missing, with PATH configuration
 - **Essential Packages**: Installs packages from your `ESSENTIAL_PACKAGES` array with smart change detection (re-installs when list changes)
 - **macOS Defaults**: Keyboard repeat, trackpad scaling, Finder preferences, Safari dev tools, etc. with smart change detection
-- **Git Configuration** (Optional): Sets user name, email, and credential helper if `GIT_AUTHOR_NAME`, `GIT_AUTHOR_EMAIL`, or `GIT_CREDENTIAL_HELPER` are configured
-- **SSH Setup** (Optional): Link SSH keys from cloud storage if `CUSTOM_SSH_DIR` is set
-- **Custom Bin Directory** (Optional): Link personal scripts from cloud storage if `CUSTOM_BIN_DIR` is set, with priority PATH placement
+- **Git Configuration** (Optional): Sets user name and email if `GIT_AUTHOR_NAME` and `GIT_AUTHOR_EMAIL` are configured
+- **Custom Symlinks** (Optional): Creates symlinks for dotfiles, SSH keys, scripts, and other files/directories from cloud storage using the `CUSTOM_SYMLINKS` array
 
 ### 📝 Configuration
 
@@ -93,43 +90,49 @@ All customization options are at the **top of `~/.zshrc`** in the **CUSTOMIZATIO
 
 ### Configuration Sections
 
-1. **Git Configuration** (`GIT_AUTHOR_NAME`, `GIT_AUTHOR_EMAIL`, `GIT_CREDENTIAL_HELPER` variables - optional)
+1. **Git Configuration** (`GIT_AUTHOR_NAME`, `GIT_AUTHOR_EMAIL` variables - optional)
    - Set these to auto-configure git on first run
-   - Leave all blank to skip git setup
+   - Leave both blank to skip git setup
    - `GIT_AUTHOR_NAME` - Your git commit author name (e.g., "John Doe")
-   - `GIT_AUTHOR_EMAIL` - Your git commit author email (e.g., john at example dot com)
-   - `GIT_CREDENTIAL_HELPER` - Credential storage method:
-     - `"osxkeychain"` - Recommended for macOS (built-in, secure)
-     - `"store"` - Simple file-based storage (less secure)
-     - `"manager"` - Git Credential Manager (requires installation)
-     - Leave empty to skip credential helper setup
+   - `GIT_AUTHOR_EMAIL` - Your git commit author email (e.g., jane@company.com)
    - One-time setup: runs `git config --global` commands to set values
-   - Safe to run multiple times (idempotent - later runs overwrite with same values)
+   - Safe to run multiple times (idempotent)
    - Example configuration:
 
      ```bash
      GIT_AUTHOR_NAME="Jane Smith"
      GIT_AUTHOR_EMAIL="jane@company.com"
-     GIT_CREDENTIAL_HELPER="osxkeychain"
      ```
 
-2. **SSH Keys** (`CUSTOM_SSH_DIR` variable - optional)
-   - Set this to link SSH keys from cloud storage (Dropbox, iCloud, etc.)
-   - Leave blank to skip SSH setup
-   - One-time setup: creates symlink, sets permissions, backs up existing `~/.ssh`
-   - Examples:
-     - `CUSTOM_SSH_DIR="$HOME/Dropbox/ssh_keys"`
-     - `CUSTOM_SSH_DIR="$HOME/Library/Mobile Documents/com~apple~CloudDocs/ssh_keys"`
+2. **Cloud Storage Folder** (`CLOUD_FOLDER` variable - optional)
+   - Base path to your cloud-synced dotfiles (Dropbox, iCloud, mounted volumes, etc.)
+   - Used as a prefix for `CUSTOM_SYMLINKS` entries to reduce path repetition
+   - Example configurations:
+     - `CLOUD_FOLDER="$HOME/Dropbox/dotfiles"`
+     - `CLOUD_FOLDER="$HOME/Library/Mobile Documents/com~apple~CloudDocs/dotfiles"`
+     - `CLOUD_FOLDER="/Volumes/My Shared Files/mycloud"`
+   - Leave empty if not using cloud storage symlinks
 
-3. **Custom Bin Directory** (`CUSTOM_BIN_DIR` variable - optional)
-   - Set this to link personal scripts from cloud storage (Dropbox, iCloud, etc.)
-   - Leave blank to skip custom bin setup
-   - One-time setup: creates symlink, sets permissions (755), backs up existing `~/.bin`
-   - **Priority in PATH**: `~/.bin` is added to PATH first for script priority
+3. **Custom Symlinks** (`CUSTOM_SYMLINKS` array - optional)
+   - Create symlinks for files and directories from cloud storage or any source
+   - Format: `"source|target"` (pipe-separated)
+   - Supports variables like `$HOME` and `$CLOUD_FOLDER`
+   - Automatic permission handling:
+     - Files: 644 (readable by all, writable by owner)
+     - Directories: 755 (full permissions for owner, read+execute for others)
+     - SSH directories: special handling (config/known_hosts: 600, keys: 600, public keys: 644)
+   - Backs up existing targets to `target.backup.<timestamp>` before symlinking
+   - Set to empty array to skip symlink setup
    - Examples:
-     - `CUSTOM_BIN_DIR="$HOME/Dropbox/bin"`
-     - `CUSTOM_BIN_DIR="$HOME/Library/Mobile Documents/com~apple~CloudDocs/bin"`
-   - Scripts in this folder become available as commands immediately
+
+     ```bash
+     CUSTOM_SYMLINKS=(
+       "$CLOUD_FOLDER/ssh|~/.ssh"
+       "$CLOUD_FOLDER/bin|~/.bin"
+       "$CLOUD_FOLDER/gitconfig|~/.gitconfig"
+       "$CLOUD_FOLDER/config/nvim|~/.config/nvim"
+     )
+     ```
 
 4. **Essential Packages** (`ESSENTIAL_PACKAGES` array)
    - Add or remove Homebrew packages to install
@@ -137,24 +140,19 @@ All customization options are at the **top of `~/.zshrc`** in the **CUSTOMIZATIO
    - **Smart detection**: Adding/removing packages automatically triggers re-installation on next shell startup
    - Example: Add `ripgrep` by adding `ripgrep # Description` to the array
 
-5. **Hushlogin** (Optional - commented by default)
-   - Uncomment the line to suppress the macOS login message
-   - Creates `~/.hushlogin` on first run when uncommented
-   - Line in CUSTOMIZATION SECTION: `[ -f ~/.hushlogin ] || { touch ~/.hushlogin && echo '~/.hushlogin created.'; }`
-
-6. **Shell Aliases** (defined directly at the top in CUSTOMIZATION SECTION)
+5. **Shell Aliases** (defined directly at the top in CUSTOMIZATION SECTION)
    - Navigation, file listing, and utility aliases
    - Edit the alias definitions directly—just copy/paste new lines
    - To add a new alias: `alias myname='my command'`
    - To modify an existing alias: change the command after the `=` sign
    - Changes take effect on next shell startup (sourced from file)
 
-7. **Vim Configuration** (`VIM_CONFIG` string)
+6. **Vim Configuration** (`VIM_CONFIG` string)
    - Customize editor settings (tabs, line numbers, search options, etc.)
    - These settings are written to `~/.vimrc` on first run
    - Modify any vim setting to your preferences
 
-8. **macOS Defaults** (`MACOS_DEFAULTS` array)
+7. **macOS Defaults** (`MACOS_DEFAULTS` array)
    - Keyboard repeat, trackpad sensitivity, Finder preferences, Safari dev tools, etc.
    - Comment out any `defaults write` line to skip that setting
    - **Smart detection**: Modifying the list automatically re-applies on next shell startup
@@ -173,13 +171,10 @@ Bootstrap uses a state directory `~/.bootstrapped/` to track which setup steps h
   - Re-applies all configured defaults
 
 - **`~/.bootstrapped/git`** - Git configuration signature
-  - Automatically re-runs when you change `GIT_AUTHOR_NAME`, `GIT_AUTHOR_EMAIL`, or `GIT_CREDENTIAL_HELPER`
+  - Automatically re-runs when you change `GIT_AUTHOR_NAME` or `GIT_AUTHOR_EMAIL`
   - Re-applies git config with updated values
 
-- **`~/.bootstrapped/ssh`** - SSH setup flag
-  - One-time setup (no re-run needed unless manually deleted)
-
-- **`~/.bootstrapped/bin`** - Custom bin setup flag
+- **`~/.bootstrapped/symlinks`** - Custom symlinks setup flag
   - One-time setup (no re-run needed unless manually deleted)
 
 **To reset a specific component**, delete the corresponding flag file:
@@ -188,8 +183,7 @@ Bootstrap uses a state directory `~/.bootstrapped/` to track which setup steps h
 rm ~/.bootstrapped/packages    # Re-run package installation on next shell
 rm ~/.bootstrapped/macos       # Re-run macOS defaults on next shell
 rm ~/.bootstrapped/git         # Re-run git configuration on next shell
-rm ~/.bootstrapped/ssh         # Re-run SSH setup on next shell
-rm ~/.bootstrapped/bin         # Re-run bin setup on next shell
+rm ~/.bootstrapped/symlinks    # Re-run symlinks setup on next shell
 ```
 
 **To reset everything:**
@@ -233,24 +227,24 @@ On first run, Bootstrap creates `~/.bootstrapped/` to track setup state:
 ~/.bootstrapped/
 ├── packages               # Package list signature (smart detection)
 ├── macos                  # macOS defaults signature (smart detection)
-├── ssh                    # SSH symlink setup flag
-└── bin                    # Custom bin setup flag
+├── git                    # Git configuration signature (smart detection)
+└── symlinks               # Custom symlinks setup flag
 ```
 
 ## What Gets Modified
 
 First run creates/modifies:
 
-- `~/.hushlogin` - Created if uncommented (suppress login banner) - *optional*
 - `~/.vimrc` - Created if missing
 - `~/.zprofile` - Adds Homebrew shellenv (if needed)
 - `~/.zsh/cache/` - Completion cache (auto-created)
 - `~/.bootstrapped/` - State directory with signature files
 
-Optional (if configured):
+Optional (if configured via `CUSTOM_SYMLINKS`):
 
-- `~/.bin` - Symlinked to `$CUSTOM_BIN_DIR` if set
-- `~/.ssh` - Symlinked to `$CUSTOM_SSH_DIR` if set
+- Custom symlinks (e.g., `~/.ssh`, `~/.bin`, `~/.config/nvim`, etc.)
+  - Creates parent directories as needed
+  - Backs up existing targets to `*.backup.<timestamp>`
 
 ## License
 
