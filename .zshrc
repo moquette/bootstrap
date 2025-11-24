@@ -76,6 +76,8 @@ alias c='clear'
 alias r='clear && exec zsh'
 alias x='exit'
 alias ea='vim ~/.zshrc'
+alias pubkey="more ~/.ssh/id_rsa.pub | pbcopy | echo '=> Public key copied to pasteboard.'"
+
 
 # ----------------------------------------------------------------------------
 # Vim Configuration
