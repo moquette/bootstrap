@@ -17,29 +17,39 @@
 #   GIT_AUTHOR_NAME="John Doe"
 #   GIT_AUTHOR_EMAIL="john@example.com"
 # ----------------------------------------------------------------------------
-GIT_AUTHOR_NAME=""
-GIT_AUTHOR_EMAIL=""
+GIT_AUTHOR_NAME="Joaquin A. Moquette"
+GIT_AUTHOR_EMAIL="moquette@gmail.com"
 
 # ----------------------------------------------------------------------------
-# SSH Configuration (Optional)
-# Set to your preferred location to symlink SSH keys from cloud storage
-# Examples:
-#   CUSTOM_SSH_DIR="$HOME/Dropbox/ssh_keys"
-#   CUSTOM_SSH_DIR="$HOME/Library/Mobile Documents/com~apple~CloudDocs/ssh_keys"
-# Leave blank to skip SSH setup
+# Custom Symlinks (Optional)
+# Set up file/directory symlinks from cloud storage using format:
+#   CUSTOM_SYMLINKS=("source|target" "source|target" ...)
+# 
+# Examples - SSH keys (one-time setup):
+#   "~/Dropbox/ssh_keys|~/.ssh"
+#   "~/Library/Mobile Documents/com~apple~CloudDocs/ssh_keys|~/.ssh"
+#
+# Examples - Personal scripts/binaries (added to PATH):
+#   "~/Dropbox/bin|~/.bin"             # ~/.bin added to PATH with priority
+#
+# Examples - Dotfiles:
+#   "~/.config/shell/zprofile|~/.zprofile"
+#   "~/.config/git/config|~/.gitconfig"
+#   "~/.config/tmux/tmuxconf|~/.tmuxconf"
+#
+# Behavior:
+#   - Existing files/directories backed up to *.backup.<timestamp>
+#   - Files set to 644 (read-write), directories to 755 (executable)
+#   - SSH paths get special permissions: private keys 600, public keys 644
+#   - One-time setup per entry; modify array to add new symlinks
+#   - Sources must exist; targets created as needed
+# Leave empty array to skip symlink setup
 # ----------------------------------------------------------------------------
-CUSTOM_SSH_DIR=""
-
-# ----------------------------------------------------------------------------
-# Custom Bin Directory (Optional)
-# Set to your preferred location to symlink personal scripts/binaries from cloud storage
-# Examples:
-#   CUSTOM_BIN_DIR="$HOME/Dropbox/bin"
-#   CUSTOM_BIN_DIR="$HOME/Library/Mobile Documents/com~apple~CloudDocs/bin"
-# Leave blank to skip custom bin setup
-# Note: ~/.bin will be added to PATH with priority over system directories
-# ----------------------------------------------------------------------------
-CUSTOM_BIN_DIR=""
+CUSTOM_SYMLINKS=(
+  "/Volumes/My Shared Files/mycloud/ssh|~/.ssh"
+  "/Volumes/My Shared Files/mycloud/bin|~/.bin"
+  "/Volumes/My Shared Files/mycloud/system/zprofile.zsh|~/.zprofile"
+)
 
 # ----------------------------------------------------------------------------
 # Essential Packages to Install via Homebrew
@@ -266,81 +276,92 @@ if [[ "$OSTYPE" == "darwin"* ]] && [ ${#MACOS_DEFAULTS[@]} -gt 0 ]; then
 fi
 
 # ----------------------------------------------------------------------------
-# Custom SSH Directory Setup (Bootstrap Phase)
-# Consumes CUSTOM_SSH_DIR from customization section
+# Custom Symlinks Setup (Bootstrap Phase)
+# Consumes CUSTOM_SYMLINKS array from customization section
+# Helper function to create individual symlinks with backup and permission handling
 # --------
 
-if [[ -n "$CUSTOM_SSH_DIR" ]]; then
-  if [[ ! -d "$CUSTOM_SSH_DIR" ]]; then
-    echo "Warning: CUSTOM_SSH_DIR is set to '$CUSTOM_SSH_DIR' but directory not found."
-    echo "SSH directory setup skipped. Create the directory or update CUSTOM_SSH_DIR."
-  elif [ ! -f ~/.bootstrapped/ssh ]; then
-    # Set proper SSH permissions
-    chmod 700 "$CUSTOM_SSH_DIR"
-
-    # Set permissions for private keys (if they exist)
-    if ls "$CUSTOM_SSH_DIR"/id_* &>/dev/null; then
-      chmod 600 "$CUSTOM_SSH_DIR"/id_*
+_setup_symlink() {
+  local symlink_entry="$1"
+  local source target
+  
+  # Parse source|target format
+  source="${symlink_entry%|*}"
+  target="${symlink_entry#*|}"
+  
+  # Expand ~ and variables in paths
+  source="${source/\~/$HOME}"
+  target="${target/\~/$HOME}"
+  eval "source=\"$source\""
+  eval "target=\"$target\""
+  
+  # Validate source exists
+  if [[ ! -e "$source" ]]; then
+    echo "  ⚠ Skipped: source not found: $source"
+    return 1
+  fi
+  
+  # Create parent directory for target if needed
+  local target_dir="$(dirname "$target")"
+  if [[ ! -d "$target_dir" ]]; then
+    mkdir -p "$target_dir" || { echo "  ✗ Failed to create directory: $target_dir"; return 1; }
+  fi
+  
+  # Backup existing target if it's not already a symlink
+  if [[ -e "$target" ]] || [[ -L "$target" ]]; then
+    if [[ ! -L "$target" ]]; then
+      mv "$target" "$target.backup.$(date +%Y%m%d_%H%M%S)"
+      echo "  ↻ Backed up existing: $target → $target.backup.*"
+    else
+      # Remove old symlink if it exists
+      rm -f "$target"
     fi
-
-    # Set permissions for public keys (if they exist)
-    if ls "$CUSTOM_SSH_DIR"/*.pub &>/dev/null; then
-      chmod 644 "$CUSTOM_SSH_DIR"/*.pub
+  fi
+  
+  # Create symlink
+  ln -sfn "$source" "$target" || { echo "  ✗ Failed to create symlink: $target"; return 1; }
+  
+  # Set permissions on target (644 for files, 755 for directories)
+  if [[ -d "$source" ]]; then
+    chmod 755 "$target" 2>/dev/null || true
+    
+    # For SSH directories, set stricter permissions on contents
+    if [[ "$target" == *".ssh" ]] || [[ "$target" == "$HOME/.ssh" ]]; then
+      find "$target" -type f -name "id_*" ! -name "*.pub" -exec chmod 600 {} \; 2>/dev/null || true
+      find "$target" -type f -name "*.pub" -exec chmod 644 {} \; 2>/dev/null || true
+      find "$target" -type f \( -name "config" -o -name "known_hosts" \) -exec chmod 600 {} \; 2>/dev/null || true
     fi
+  else
+    chmod 644 "$target" 2>/dev/null || true
+  fi
+  
+  echo "  ✓ Symlinked: $target → $source"
+  return 0
+}
 
-    # Set permissions for config and known_hosts (if they exist)
-    [[ -f "$CUSTOM_SSH_DIR/config" ]] && chmod 600 "$CUSTOM_SSH_DIR/config"
-    [[ -f "$CUSTOM_SSH_DIR/known_hosts" ]] && chmod 644 "$CUSTOM_SSH_DIR/known_hosts"
-
-    # Backup existing ~/.ssh if it's not a symlink
-    if [[ -d ~/.ssh ]] && [[ ! -L ~/.ssh ]]; then
-      mv ~/.ssh ~/.ssh.backup.$(date +%Y%m%d_%H%M%S)
-      echo "Backed up existing ~/.ssh to ~/.ssh.backup.*"
-    fi
-
-    # Create symlink from ~/.ssh to custom directory
-    ln -sfn "$CUSTOM_SSH_DIR" ~/.ssh
-
-    # Create flag file
-    touch ~/.bootstrapped/ssh
-    echo "SSH directory configured: ~/.ssh -> $CUSTOM_SSH_DIR"
-    echo "Permissions set: directory=700, private keys=600, public keys=644"
+# Process custom symlinks on first run
+if [ ${#CUSTOM_SYMLINKS[@]} -gt 0 ] && [ ! -f ~/.bootstrapped/symlinks ]; then
+  echo "Setting up custom symlinks..."
+  
+  local failed_count=0
+  for symlink_entry in "${CUSTOM_SYMLINKS[@]}"; do
+    _setup_symlink "$symlink_entry" || ((failed_count++))
+  done
+  
+  # Create flag file to mark completion
+  touch ~/.bootstrapped/symlinks
+  
+  if [[ $failed_count -eq 0 ]]; then
+    echo "Custom symlinks configured successfully."
+  else
+    echo "Custom symlinks setup completed with $failed_count error(s). Check paths in CUSTOM_SYMLINKS."
   fi
 fi
 
-# ----------------------------------------------------------------------------
-# Custom Bin Directory Setup (Bootstrap Phase)
-# Consumes CUSTOM_BIN_DIR from customization section
-# Creates symlink from ~/.bin to custom directory and adds to PATH
-# --------
-
-if [[ -n "$CUSTOM_BIN_DIR" ]]; then
-  if [[ ! -d "$CUSTOM_BIN_DIR" ]]; then
-    echo "Warning: CUSTOM_BIN_DIR is set to '$CUSTOM_BIN_DIR' but directory not found."
-    echo "Custom bin directory setup skipped. Create the directory or update CUSTOM_BIN_DIR."
-  elif [ ! -f ~/.bootstrapped/bin ]; then
-    # Set proper bin directory permissions
-    chmod 755 "$CUSTOM_BIN_DIR"
-
-    # Set permissions for executable files (if they exist)
-    if ls "$CUSTOM_BIN_DIR"/* &>/dev/null 2>&1; then
-      chmod 755 "$CUSTOM_BIN_DIR"/*
-    fi
-
-    # Backup existing ~/.bin if it's not a symlink
-    if [[ -d ~/.bin ]] && [[ ! -L ~/.bin ]]; then
-      mv ~/.bin ~/.bin.backup.$(date +%Y%m%d_%H%M%S)
-      echo "Backed up existing ~/.bin to ~/.bin.backup.*"
-    fi
-
-    # Create symlink from ~/.bin to custom directory
-    ln -sfn "$CUSTOM_BIN_DIR" ~/.bin
-
-    # Create flag file
-    touch ~/.bootstrapped/bin
-    echo "Custom bin directory configured: ~/.bin -> $CUSTOM_BIN_DIR"
-    echo "Permissions set: directory=755, executables=755"
-  fi
+# Add ~/.bin to PATH if it exists (from symlinks or otherwise)
+if [[ -d ~/.bin ]] && [[ ! (" ${path[*]} " =~ " $HOME/.bin ") ]]; then
+  path=("$HOME/.bin" $path)
+  export PATH
 fi
 
 # ----------------------------------------------------------------------------
