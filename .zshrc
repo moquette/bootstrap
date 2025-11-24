@@ -181,9 +181,76 @@ MACOS_DEFAULTS=(
 # ============================================================================
 
 # ----------------------------------------------------------------------------
+# Bootstrap Helper Functions
+# Utility functions for bootstrap operations
+# --------
+
+# Check if command exists
+_has_command() {
+  (( ${+commands[$1]} ))
+}
+
+# Output helpers for consistent messaging
+_bootstrap_success() {
+  echo "  ✓ $1"
+}
+
+_bootstrap_error() {
+  echo "  ✗ $1"
+}
+
+_bootstrap_warning() {
+  echo "  ⚠ $1"
+}
+
+_bootstrap_info() {
+  echo "  → $1"
+}
+
+# Smart signature-based state management
+# Compares stored signature with current and runs callback if different
+_check_signature() {
+  local flag_file="$1"
+  local current_signature="$2"
+  local callback="$3"
+  
+  local stored_signature=""
+  if [ -f "$flag_file" ]; then
+    stored_signature=$(cat "$flag_file")
+  fi
+  
+  if [ "$current_signature" != "$stored_signature" ]; then
+    eval "$callback"
+    echo "$current_signature" > "$flag_file"
+    return 0
+  fi
+  return 1
+}
+
+# Set SSH permissions on a directory
+_set_ssh_permissions() {
+  local ssh_dir="$1"
+  
+  if [[ ! -d "$ssh_dir" ]]; then
+    return 1
+  fi
+  
+  find "$ssh_dir" -type f -name "id_*" ! -name "*.pub" -exec chmod 600 {} \; 2>/dev/null || true
+  find "$ssh_dir" -type f -name "*.pub" -exec chmod 644 {} \; 2>/dev/null || true
+  find "$ssh_dir" -type f \( -name "config" -o -name "known_hosts" \) -exec chmod 600 {} \; 2>/dev/null || true
+}
+
+# ============================================================================
+# END OF BOOTSTRAP HELPERS
+# ============================================================================
+
+# ============================================================================
+# BOOTSTRAP PHASE
+# ============================================================================
+
 # Bootstrap State Directory
 # Central location for all bootstrap signature files
-# ----------------------------------------------------------------------------
+# --------
 [ -d ~/.bootstrapped ] || { mkdir -p ~/.bootstrapped && echo '~/.bootstrapped created.'; }
 
 # ----------------------------------------------------------------------------
@@ -212,7 +279,7 @@ _setup_homebrew_path() {
   eval "$($brew_path shellenv)"
 }
 
-if [[ "$OSTYPE" == "darwin"* ]] && ! (( ${+commands[brew]} )); then
+if [[ "$OSTYPE" == "darwin"* ]] && ! _has_command brew; then
   if [[ -x /opt/homebrew/bin/brew ]] || [[ -x /usr/local/bin/brew ]]; then
     _setup_homebrew_path
   else
@@ -230,30 +297,12 @@ fi
 # Consumes ESSENTIAL_PACKAGES array from customization section
 # Automatically detects when packages are added/removed and re-installs
 # ----------------------------------------------------------------------------
-if (( ${+commands[brew]} )) && [ ${#ESSENTIAL_PACKAGES[@]} -gt 0 ]; then
-  # Create a signature of the current package list
+if _has_command brew && [ ${#ESSENTIAL_PACKAGES[@]} -gt 0 ]; then
   local packages_signature="${ESSENTIAL_PACKAGES[*]}"
   local packages_flag="$HOME/.bootstrapped/packages"
-  local stored_signature=""
   
-  # Read stored signature if it exists
-  if [ -f "$packages_flag" ]; then
-    stored_signature=$(cat "$packages_flag")
-  fi
-  
-  # Install if signature changed (packages added/removed) or flag doesn't exist
-  if [ "$packages_signature" != "$stored_signature" ]; then
-    echo "Installing essential packages..."
-    for package in "${ESSENTIAL_PACKAGES[@]}"; do
-      if ! brew list "$package" &>/dev/null; then
-        echo "  Installing $package..."
-        brew install "$package"
-      fi
-    done
-    
-    # Store the current signature to detect future changes
-    echo "$packages_signature" > "$packages_flag"
-    echo "Essential packages installed."
+  if _check_signature "$packages_flag" "$packages_signature" 'echo "Installing essential packages..."; for package in "${ESSENTIAL_PACKAGES[@]}"; do if ! brew list "$package" &>/dev/null; then echo "  Installing $package..."; brew install "$package"; fi; done; echo "Essential packages installed."'; then
+    :
   fi
 fi
 
@@ -264,27 +313,11 @@ fi
 # Comment out lines in MACOS_DEFAULTS to skip specific settings
 # ----------------------------------------------------------------------------
 if [[ "$OSTYPE" == "darwin"* ]] && [ ${#MACOS_DEFAULTS[@]} -gt 0 ]; then
-  # Create a signature of the current defaults list
   local defaults_signature="${MACOS_DEFAULTS[*]}"
   local defaults_flag="$HOME/.bootstrapped/macos"
-  local stored_signature=""
   
-  # Read stored signature if it exists
-  if [ -f "$defaults_flag" ]; then
-    stored_signature=$(cat "$defaults_flag")
-  fi
-  
-  # Apply if signature changed (defaults added/removed/modified) or flag doesn't exist
-  if [ "$defaults_signature" != "$stored_signature" ]; then
-    echo "Configuring macOS defaults..."
-    
-    for default_cmd in "${MACOS_DEFAULTS[@]}"; do
-      eval "$default_cmd"
-    done
-    
-    # Store the current signature to detect future changes
-    echo "$defaults_signature" > "$defaults_flag"
-    echo "macOS defaults configured. Restart apps for changes to take effect."
+  if _check_signature "$defaults_flag" "$defaults_signature" 'echo "Configuring macOS defaults..."; for default_cmd in "${MACOS_DEFAULTS[@]}"; do eval "$default_cmd"; done; echo "macOS defaults configured. Restart apps for changes to take effect."'; then
+    :
   fi
 fi
 
@@ -310,21 +343,21 @@ _setup_symlink() {
   
   # Validate source exists
   if [[ ! -e "$source" ]]; then
-    echo "  ⚠ Skipped: source not found: $source"
+    _bootstrap_warning "Skipped: source not found: $source"
     return 1
   fi
   
   # Create parent directory for target if needed
   local target_dir="$(dirname "$target")"
   if [[ ! -d "$target_dir" ]]; then
-    mkdir -p "$target_dir" || { echo "  ✗ Failed to create directory: $target_dir"; return 1; }
+    mkdir -p "$target_dir" || { _bootstrap_error "Failed to create directory: $target_dir"; return 1; }
   fi
   
   # Backup existing target if it's not already a symlink
   if [[ -e "$target" ]] || [[ -L "$target" ]]; then
     if [[ ! -L "$target" ]]; then
       mv "$target" "$target.backup.$(date +%Y%m%d_%H%M%S)"
-      echo "  ↻ Backed up existing: $target → $target.backup.*"
+      _bootstrap_info "Backed up existing: $target → $target.backup.*"
     else
       # Remove old symlink if it exists
       rm -f "$target"
@@ -332,7 +365,7 @@ _setup_symlink() {
   fi
   
   # Create symlink
-  ln -sfn "$source" "$target" || { echo "  ✗ Failed to create symlink: $target"; return 1; }
+  ln -sfn "$source" "$target" || { _bootstrap_error "Failed to create symlink: $target"; return 1; }
   
   # Set permissions on target (644 for files, 755 for directories)
   if [[ -d "$source" ]]; then
@@ -340,15 +373,13 @@ _setup_symlink() {
     
     # For SSH directories, set stricter permissions on contents
     if [[ "$target" == *".ssh" ]] || [[ "$target" == "$HOME/.ssh" ]]; then
-      find "$target" -type f -name "id_*" ! -name "*.pub" -exec chmod 600 {} \; 2>/dev/null || true
-      find "$target" -type f -name "*.pub" -exec chmod 644 {} \; 2>/dev/null || true
-      find "$target" -type f \( -name "config" -o -name "known_hosts" \) -exec chmod 600 {} \; 2>/dev/null || true
+      _set_ssh_permissions "$target"
     fi
   else
     chmod 644 "$target" 2>/dev/null || true
   fi
   
-  echo "  ✓ Symlinked: $target → $source"
+  _bootstrap_success "Symlinked: $target → $source"
   return 0
 }
 
@@ -383,36 +414,14 @@ fi
 # Only runs if at least name or email is set
 # Smart detection: re-runs if git variables change (similar to packages and macOS defaults)
 # Credential helper is managed by the system (osxkeychain on macOS)
-# --------
+# ----------------------------------------------------------------------------
 
-if (( ${+commands[git]} )) && ([[ -n "$GIT_AUTHOR_NAME" ]] || [[ -n "$GIT_AUTHOR_EMAIL" ]]); then
-  # Create a signature of the current git config
+if _has_command git && ([[ -n "$GIT_AUTHOR_NAME" ]] || [[ -n "$GIT_AUTHOR_EMAIL" ]]); then
   local git_signature="${GIT_AUTHOR_NAME}|${GIT_AUTHOR_EMAIL}"
   local git_flag="$HOME/.bootstrapped/git"
-  local stored_signature=""
   
-  # Read stored signature if it exists
-  if [ -f "$git_flag" ]; then
-    stored_signature=$(cat "$git_flag")
-  fi
-  
-  # Configure if signature changed (user updated git config) or flag doesn't exist
-  if [ "$git_signature" != "$stored_signature" ]; then
-    echo "Configuring git..."
-    
-    if [[ -n "$GIT_AUTHOR_NAME" ]]; then
-      git config --global user.name "$GIT_AUTHOR_NAME"
-      echo "  Set git user.name to: $GIT_AUTHOR_NAME"
-    fi
-    
-    if [[ -n "$GIT_AUTHOR_EMAIL" ]]; then
-      git config --global user.email "$GIT_AUTHOR_EMAIL"
-      echo "  Set git user.email to: $GIT_AUTHOR_EMAIL"
-    fi
-    
-    # Store the current signature to detect future changes
-    echo "$git_signature" > "$git_flag"
-    echo "Git configuration complete."
+  if _check_signature "$git_flag" "$git_signature" 'echo "Configuring git..."; [[ -n "$GIT_AUTHOR_NAME" ]] && git config --global user.name "$GIT_AUTHOR_NAME" && echo "  Set git user.name to: $GIT_AUTHOR_NAME"; [[ -n "$GIT_AUTHOR_EMAIL" ]] && git config --global user.email "$GIT_AUTHOR_EMAIL" && echo "  Set git user.email to: $GIT_AUTHOR_EMAIL"; echo "Git configuration complete."'; then
+    :
   fi
 fi
 
