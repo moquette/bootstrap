@@ -65,6 +65,7 @@ CUSTOM_SYMLINKS=(
   "$CLOUD_FOLDER/system/vimrc.txt|~/.vimrc"
   "$CLOUD_FOLDER/system/aliases.txt|~/.aliases"
   "$CLOUD_FOLDER/system/brewfile.rb|~/.Brewfile"
+  "$CLOUD_FOLDER/system/macos-defaults.txt|~/.macos"
 )
 
 # ============================================================================
@@ -89,43 +90,12 @@ CUSTOM_SYMLINKS=(
 
 # ----------------------------------------------------------------------------
 # macOS Defaults Configuration
-# Customize keyboard, trackpad, Finder, Safari, and other system settings.
-# Comment out any sections you don't want to apply.
+# System defaults are now managed via macos-defaults.txt (symlinked from cloud storage).
+# Execute manually with: bash ~/.macos
+# Auto-executed by bootstrap if ~/.macos exists.
+# Edit macos-defaults.txt in your cloud storage to customize system settings.
+# See: $CLOUD_FOLDER/system/macos-defaults.txt
 # ----------------------------------------------------------------------------
-MACOS_DEFAULTS=(
-  # Keyboard & Input
-  "defaults write -g ApplePressAndHoldEnabled -bool false"
-  "defaults write NSGlobalDomain KeyRepeat -int 1"
-
-  # Trackpad & Mouse
-  "defaults write NSGlobalDomain com.apple.trackpad.scaling -float 3.0"
-  "defaults write NSGlobalDomain com.apple.trackpad.scrolling -float 1.0"
-  "defaults write NSGlobalDomain com.apple.mouse.scaling -float 2.5"
-  "defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad Clicking -bool true"
-  "defaults write NSGlobalDomain com.apple.mouse.tapBehavior -int 1"
-  "defaults write com.apple.AppleMultitouchTrackpad TrackpadThreeFingerDrag -bool true"
-  "defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadThreeFingerDrag -bool true"
-
-  # Finder
-  "defaults write com.apple.Finder FXPreferredViewStyle clmv"
-  "defaults write com.apple.finder NewWindowTarget -string 'PfLo'"
-  "defaults write com.apple.finder NewWindowTargetPath -string 'file://${HOME}/'"
-
-  # Hot Corners - Bottom-right starts screen saver
-  "defaults write com.apple.dock wvous-br-corner -int 5"
-  "defaults write com.apple.dock wvous-br-modifier -int 0"
-
-  # Safari Developer Tools
-  "defaults write com.apple.Safari.SandboxBroker ShowDevelopMenu -bool true"
-  "defaults write com.apple.Safari.plist IncludeDevelopMenu -bool true"
-  "defaults write com.apple.Safari.plist WebKitDeveloperExtrasEnabledPreferenceKey -bool true"
-  "defaults write com.apple.Safari.plist com.apple.Safari.ContentPageGroupIdentifier.WebKit2DeveloperExtrasEnabled -bool true"
-  "defaults write NSGlobalDomain WebKitDeveloperExtras -bool true"
-
-  # TextEdit
-  "defaults write com.apple.TextEdit NSShowAppCentricOpenPanelInsteadOfUntitledFile -bool false"
-  "defaults write com.apple.TextEdit RichText -int 0"
-)
 
 # ============================================================================
 # END OF CUSTOMIZATION SECTION
@@ -298,11 +268,11 @@ _bootstrap() {
   fi
 
   # macOS Defaults Configuration
-  if [[ "$OSTYPE" == "darwin"* ]] && [ ${#MACOS_DEFAULTS[@]} -gt 0 ]; then
-    local defaults_signature="${MACOS_DEFAULTS[*]}"
-    local defaults_flag="$HOME/.bootstrapped/macos"
+  if _has_command bash && [[ -r "$HOME/.macos" ]]; then
+    local macos_signature=$(cat "$HOME/.macos" 2>/dev/null | md5sum | awk '{print $1}')
+    local macos_flag="$HOME/.bootstrapped/macos"
     
-    if _check_signature "$defaults_flag" "$defaults_signature" 'echo "Configuring macOS defaults..."; for default_cmd in "${MACOS_DEFAULTS[@]}"; do eval "$default_cmd"; done; echo "macOS defaults configured. Restart apps for changes to take effect."'; then
+    if _check_signature "$macos_flag" "$macos_signature" 'echo "Configuring macOS defaults..."; bash "$HOME/.macos" 2>/dev/null && echo "macOS defaults configured. Restart apps for changes to take effect." || echo "macOS configuration completed with warnings."'; then
       :
     fi
   fi
