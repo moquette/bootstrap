@@ -257,6 +257,22 @@ _bootstrap() {
     fi
   fi
 
+  # Custom Symlinks Setup (run early so Brewfile exists for bundle phase)
+  if [ ${#CUSTOM_SYMLINKS[@]} -gt 0 ] && [ ! -f ~/.bootstrapped/symlinks ]; then
+    local failed_count=0
+    for symlink_entry in "${CUSTOM_SYMLINKS[@]}"; do
+      _setup_symlink "$symlink_entry" || ((failed_count++))
+    done
+    
+    touch ~/.bootstrapped/symlinks
+    
+    if [[ $failed_count -eq 0 ]]; then
+      _bootstrap_success "Custom symlinks configured successfully."
+    else
+      _bootstrap_warning "Custom symlinks setup completed with $failed_count error(s). Check paths in CUSTOM_SYMLINKS."
+    fi
+  fi
+
   # Homebrew Bundle (Install packages from Brewfile)
   if _has_command brew && [[ -r "$HOME/.Brewfile" ]]; then
     local brewfile_signature=$(cat "$HOME/.Brewfile" 2>/dev/null | md5sum | awk '{print $1}')
@@ -274,24 +290,6 @@ _bootstrap() {
     
     if _check_signature "$macos_flag" "$macos_signature" 'echo "Configuring macOS defaults..."; bash "$HOME/.macos" 2>/dev/null && echo "macOS defaults configured. Restart apps for changes to take effect." || echo "macOS configuration completed with warnings."'; then
       :
-    fi
-  fi
-
-  # Custom Symlinks Setup
-  if [ ${#CUSTOM_SYMLINKS[@]} -gt 0 ] && [ ! -f ~/.bootstrapped/symlinks ]; then
-    echo "Setting up custom symlinks..."
-    
-    local failed_count=0
-    for symlink_entry in "${CUSTOM_SYMLINKS[@]}"; do
-      _setup_symlink "$symlink_entry" || ((failed_count++))
-    done
-    
-    touch ~/.bootstrapped/symlinks
-    
-    if [[ $failed_count -eq 0 ]]; then
-      echo "Custom symlinks configured successfully."
-    else
-      echo "Custom symlinks setup completed with $failed_count error(s). Check paths in CUSTOM_SYMLINKS."
     fi
   fi
 
