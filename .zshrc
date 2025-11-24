@@ -64,16 +64,15 @@ CUSTOM_SYMLINKS=(
   "$CLOUD_FOLDER/system/zprofile.zsh|~/.zprofile"
   "$CLOUD_FOLDER/system/vimrc.txt|~/.vimrc"
   "$CLOUD_FOLDER/system/aliases.txt|~/.aliases"
+  "$CLOUD_FOLDER/system/brewfile.rb|~/.Brewfile"
 )
 
-# ----------------------------------------------------------------------------
-# Essential Packages to Install via Homebrew
-# Add or remove packages as needed. Set to empty array to skip installation.
-# ----------------------------------------------------------------------------
-ESSENTIAL_PACKAGES=(
-  node        # JavaScript runtime
-  fzf         # Fuzzy finder for better history search
-)
+# ============================================================================
+# PACKAGE MANAGEMENT
+# ============================================================================
+# Packages are now managed via Brewfile (symlinked from cloud storage).
+# Install with: brew bundle --file=~/.Brewfile
+# See: $CLOUD_FOLDER/system/brewfile.rb
 
 # ----------------------------------------------------------------------------
 # Hushlogin - Suppress macOS login message
@@ -288,12 +287,12 @@ _bootstrap() {
     fi
   fi
 
-  # Essential Packages Auto-Install
-  if _has_command brew && [ ${#ESSENTIAL_PACKAGES[@]} -gt 0 ]; then
-    local packages_signature="${ESSENTIAL_PACKAGES[*]}"
-    local packages_flag="$HOME/.bootstrapped/packages"
+  # Homebrew Bundle (Install packages from Brewfile)
+  if _has_command brew && [[ -r "$HOME/.Brewfile" ]]; then
+    local brewfile_signature=$(cat "$HOME/.Brewfile" 2>/dev/null | md5sum | awk '{print $1}')
+    local brewfile_flag="$HOME/.bootstrapped/brewfile"
     
-    if _check_signature "$packages_flag" "$packages_signature" 'echo "Installing essential packages..."; for package in "${ESSENTIAL_PACKAGES[@]}"; do if ! brew list "$package" &>/dev/null; then echo "  Installing $package..."; brew install "$package"; fi; done; echo "Essential packages installed."'; then
+    if _check_signature "$brewfile_flag" "$brewfile_signature" 'echo "Installing packages from Brewfile..."; brew bundle --file="$HOME/.Brewfile" --no-upgrade 2>/dev/null && echo "Homebrew bundle installed successfully." || echo "Homebrew bundle installation completed with warnings."'; then
       :
     fi
   fi
