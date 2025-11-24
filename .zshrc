@@ -65,7 +65,7 @@ CUSTOM_SYMLINKS=(
   "$CLOUD_FOLDER/system/vimrc.txt|~/.vimrc"
   "$CLOUD_FOLDER/system/aliases.txt|~/.aliases"
   "$CLOUD_FOLDER/system/brewfile.rb|~/.Brewfile"
-  "$CLOUD_FOLDER/system/macos-defaults.txt|~/.macos"
+  "$CLOUD_FOLDER/system/macos-defaults.txt|~/.macos-defaults"
 )
 
 # ============================================================================
@@ -91,8 +91,8 @@ CUSTOM_SYMLINKS=(
 # ----------------------------------------------------------------------------
 # macOS Defaults Configuration
 # System defaults are now managed via macos-defaults.txt (symlinked from cloud storage).
-# Execute manually with: bash ~/.macos
-# Auto-executed by bootstrap if ~/.macos exists.
+# Execute manually with: bash ~/.macos-defaults
+# Auto-executed by bootstrap if ~/.macos-defaults exists.
 # Edit macos-defaults.txt in your cloud storage to customize system settings.
 # See: $CLOUD_FOLDER/system/macos-defaults.txt
 # ----------------------------------------------------------------------------
@@ -294,11 +294,11 @@ _bootstrap() {
   fi
 
   # macOS Defaults Configuration
-  if _has_command bash && [[ -r "$HOME/.macos" ]]; then
-    local macos_signature=$(cat "$HOME/.macos" 2>/dev/null | md5sum | awk '{print $1}')
+  if _has_command bash && [[ -r "$HOME/.macos-defaults" ]]; then
+    local macos_signature=$(cat "$HOME/.macos-defaults" 2>/dev/null | md5sum | awk '{print $1}')
     local macos_flag="$HOME/.bootstrapped/macos"
     
-    if _check_signature "$macos_flag" "$macos_signature" 'echo "Configuring macOS defaults..."; bash "$HOME/.macos" 2>/dev/null && echo "macOS defaults configured. Restart apps for changes to take effect." || echo "macOS configuration completed with warnings."'; then
+    if _check_signature "$macos_flag" "$macos_signature" 'echo "Configuring macOS defaults..."; bash "$HOME/.macos-defaults" 2>/dev/null && echo "macOS defaults configured. Restart apps for changes to take effect." || echo "macOS configuration completed with warnings."'; then
       :
     fi
   fi
