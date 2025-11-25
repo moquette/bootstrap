@@ -95,6 +95,7 @@ _bootstrap_homebrew() {
   if [[ "$OSTYPE" == "darwin"* ]] && ! _has_command brew; then
     echo "Installing Homebrew..." && /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" 2>&1 | grep -v "^  "
     eval "$($brew_path shellenv)" && grep -q "brew shellenv" ~/.zprofile || echo "eval \"\$($brew_path shellenv)\"" >> ~/.zprofile
+    export PATH="$(dirname "$brew_path"):$PATH"
     brew analytics off 2>/dev/null && echo "Homebrew installed."
   fi
 }
