@@ -1,63 +1,26 @@
 # shfmt: disable
-# ============================================================================
-# ZSH Configuration
-# A single-file setup for Zsh shell environment.
-# ============================================================================
+# ZSH Configuration - Single-file bootstrap for macOS
 
-# ============================================================================
-# CUSTOMIZATION SECTION - Edit these blocks to personalize your setup
-# ============================================================================
-
-# ----------------------------------------------------------------------------
-# Git Configuration (Optional)
-# Set git user name and email
-# Leave blank to skip git setup
-# Credential helper (osxkeychain) is managed by the system
-# Examples:
-#   GIT_AUTHOR_NAME="John Doe"
-#   GIT_AUTHOR_EMAIL="john@example.com"
-# ----------------------------------------------------------------------------
+# CUSTOMIZATION - Edit these values to personalize your setup
+# Git Configuration (Optional) - Leave blank to skip git setup
 GIT_AUTHOR_NAME="Joaquin A. Moquette"
 GIT_AUTHOR_EMAIL="moquette@gmail.com"
 
-# ----------------------------------------------------------------------------
 # Cloud Storage Base Directory (Optional)
-# Set to your primary cloud storage location for easy symlink configuration
-# Examples:
-#   CLOUD_FOLDER="/Volumes/My Shared Files/mycloud"
-#   CLOUD_FOLDER="$HOME/Dropbox"
-#   CLOUD_FOLDER="$HOME/iCloud Drive"
+# Set to your cloud storage location for easy symlink configuration
+# Examples: CLOUD_FOLDER="/Volumes/My Shared Files/mycloud" or "$HOME/Dropbox"
 # Leave blank to use full paths in CUSTOM_SYMLINKS instead
-# ----------------------------------------------------------------------------
 CLOUD_FOLDER="/Volumes/My Shared Files/mycloud"
 
-# ----------------------------------------------------------------------------
 # Custom Symlinks (Optional)
-# Set up file/directory symlinks from cloud storage using format:
-#   CUSTOM_SYMLINKS=("source|target" "source|target" ...)
-# Use $CLOUD_FOLDER to reference your cloud storage base directory
-# 
-# Examples - SSH keys (one-time setup):
-#   "$CLOUD_FOLDER/ssh|~/.ssh"
-#   "~/Dropbox/ssh_keys|~/.ssh"
-#   "~/Library/Mobile Documents/com~apple~CloudDocs/ssh_keys|~/.ssh"
-#
-# Examples - Personal scripts/binaries (added to PATH):
-#   "$CLOUD_FOLDER/bin|~/.bin"         # ~/.bin added to PATH with priority
-#
-# Examples - Dotfiles:
-#   "$CLOUD_FOLDER/system/zprofile.zsh|~/.zprofile"
-#   "$CLOUD_FOLDER/git/config|~/.gitconfig"
-#   "$CLOUD_FOLDER/tmux/tmuxconf|~/.tmuxconf"
-#
-# Behavior:
-#   - Existing files/directories backed up to *.backup.<timestamp>
-#   - Files set to 644 (read-write), directories to 755 (executable)
-#   - SSH paths get special permissions: private keys 600, public keys 644
-#   - One-time setup per entry; modify array to add new symlinks
-#   - Sources must exist; targets created as needed
-# Leave empty array to skip symlink setup
-# ----------------------------------------------------------------------------
+# Format: CUSTOM_SYMLINKS=("source|target" "source|target" ...)
+# Use $CLOUD_FOLDER to reference your cloud base directory
+# Examples:
+#   "$CLOUD_FOLDER/ssh|~/.ssh"                    # SSH keys (one-time setup)
+#   "$CLOUD_FOLDER/bin|~/.bin"                    # Personal scripts (added to PATH)
+#   "$CLOUD_FOLDER/system/zprofile.zsh|~/.zprofile"  # Dotfiles from cloud
+# Behavior: Files backed up to *.backup.<timestamp>, permissions set to 644 (or 755 for directories)
+# SSH paths get special permissions: private keys 600, public keys 644
 CUSTOM_SYMLINKS=(
   "$CLOUD_FOLDER/ssh|~/.ssh"
   "$CLOUD_FOLDER/bin|~/.bin"
@@ -68,422 +31,204 @@ CUSTOM_SYMLINKS=(
   "$CLOUD_FOLDER/system/macos-defaults.txt|~/.macos-defaults"
 )
 
-# ============================================================================
-# PACKAGE MANAGEMENT
-# ============================================================================
-# Packages are now managed via Brewfile (symlinked from cloud storage).
-# Install with: brew bundle --file=~/.Brewfile
-# See: $CLOUD_FOLDER/system/brewfile.rb
-
-# ----------------------------------------------------------------------------
-# Hushlogin - Suppress macOS login message
-# Uncomment the line below to enable (creates ~/.hushlogin on first run)
-# ----------------------------------------------------------------------------
-# [ -f ~/.hushlogin ] || { touch ~/.hushlogin && echo '~/.hushlogin created.'; }
-
-# ----------------------------------------------------------------------------
-# Shell Aliases
-# Aliases are now sourced from ~/.aliases (symlinked to cloud storage).
-# Edit aliases.txt in your cloud storage to customize.
-# See: $CLOUD_FOLDER/system/aliases.txt
-# ----------------------------------------------------------------------------
-
-# ----------------------------------------------------------------------------
-# macOS Defaults Configuration
-# System defaults are now managed via macos-defaults.txt (symlinked from cloud storage).
-# Execute manually with: bash ~/.macos-defaults
-# Auto-executed by bootstrap if ~/.macos-defaults exists.
-# Edit macos-defaults.txt in your cloud storage to customize system settings.
-# See: $CLOUD_FOLDER/system/macos-defaults.txt
-# ----------------------------------------------------------------------------
-
-# ============================================================================
-# END OF CUSTOMIZATION SECTION
-# ============================================================================
-
-# ============================================================================
-# BOOTSTRAP HELPER FUNCTIONS
-# Utility functions for bootstrap operations
-# --------
-
-# Check if command exists
+# BOOTSTRAP HELPERS - Detection & Formatting
+# _has_command: Check if command exists in PATH
 _has_command() {
   (( ${+commands[$1]} ))
 }
 
-# Output helpers for consistent messaging
-_bootstrap_success() {
-  echo "  ✓ $1"
+# _log: Output formatted message (icon + text)
+_log() {
+  echo "  $1 $2"
 }
 
-_bootstrap_error() {
-  echo "  ✗ $1"
-}
-
-_bootstrap_warning() {
-  echo "  ⚠ $1"
-}
-
-_bootstrap_info() {
-  echo "  → $1"
-}
-
-# Smart signature-based state management
-# Compares stored signature with current and runs callback if different
+# BOOTSTRAP HELPERS - State Management
+# _check_signature: Smart detection - compares MD5 signature to stored flag
+# If signature changed, runs callback and stores new signature
+# Usage: _check_signature "$flag_file" "$signature" 'command to run'
 _check_signature() {
-  local flag_file="$1"
-  local current_signature="$2"
-  local callback="$3"
-  
-  local stored_signature=""
-  if [ -f "$flag_file" ]; then
-    stored_signature=$(cat "$flag_file")
-  fi
-  
-  if [ "$current_signature" != "$stored_signature" ]; then
-    eval "$callback"
-    echo "$current_signature" > "$flag_file"
-    return 0
-  fi
+  local flag_file="$1" current="$2" callback="$3" stored=""
+  [[ -f "$flag_file" ]] && stored=$(cat "$flag_file")
+  [[ "$current" != "$stored" ]] && eval "$callback" && echo "$current" > "$flag_file" && return 0
   return 1
 }
 
-# Set SSH permissions on a directory
+# BOOTSTRAP HELPERS - Permissions
+# _set_ssh_permissions: Set proper SSH file permissions
+# Private keys: 600 (read-write only)
+# Public keys: 644 (readable)
+# Config/known_hosts: 600
 _set_ssh_permissions() {
-  local ssh_dir="$1"
-  
-  if [[ ! -d "$ssh_dir" ]]; then
-    return 1
-  fi
-  
-  find "$ssh_dir" -type f -name "id_*" ! -name "*.pub" -exec chmod 600 {} \; 2>/dev/null || true
-  find "$ssh_dir" -type f -name "*.pub" -exec chmod 644 {} \; 2>/dev/null || true
-  find "$ssh_dir" -type f \( -name "config" -o -name "known_hosts" \) -exec chmod 600 {} \; 2>/dev/null || true
+  [[ ! -d "$1" ]] && return 1
+  find "$1" -type f -name "id_*" ! -name "*.pub" -exec chmod 600 {} \; 2>/dev/null || true
+  find "$1" -type f -name "*.pub" -exec chmod 644 {} \; 2>/dev/null || true
+  find "$1" -type f \( -name "config" -o -name "known_hosts" \) -exec chmod 600 {} \; 2>/dev/null || true
 }
 
-# ============================================================================
-# END OF BOOTSTRAP HELPERS
-# ============================================================================
+# BOOTSTRAP HELPERS - Symlinks
+# _setup_symlink: Create symlink from cloud storage with validation
+# Parses "source|target" format, expands paths, handles backups
+# Sets permissions: 755 for directories, 644 for files (600 for SSH keys)
+_setup_symlink() {
+  local source="${1%|*}" target="${1#*|}" source_exp target_exp
+  [[ "$source" == *'$CLOUD_FOLDER'* ]] && [[ -z "$CLOUD_FOLDER" ]] && { _log "⚠" "Skipped: CLOUD_FOLDER not set for $source"; return 1; }
+  source_exp="${source/\~/$HOME}" target_exp="${target/\~/$HOME}"
+  eval "source_exp=\"$source_exp\"" && eval "target_exp=\"$target_exp\""
+  [[ ! -e "$source_exp" ]] && { _log "⚠" "Skipped: source not found: $source_exp"; return 1; }
+  mkdir -p "$(dirname "$target_exp")" || return 1
+  [[ (-e "$target_exp" || -L "$target_exp") && ! -L "$target_exp" ]] && mv "$target_exp" "$target_exp.backup.$(date +%Y%m%d_%H%M%S)"
+  ln -sfn "$source_exp" "$target_exp" || return 1
+  [[ -d "$source_exp" ]] && { chmod 755 "$target_exp" 2>/dev/null; [[ "$target_exp" == *".ssh" ]] && _set_ssh_permissions "$target_exp"; } || chmod 644 "$target_exp" 2>/dev/null
+  _log "✓" "Symlinked: $target_exp"
+}
 
-# ============================================================================
-# BOOTSTRAP PHASE
-# ============================================================================
-
-# Bootstrap State Directory
+# BOOTSTRAP PHASES - Each phase handles one aspect of system setup
+# State files stored in ~/.bootstrapped/ with signatures to detect changes
 mkdir -p ~/.bootstrapped
 
-# Symlink helper function (used by _bootstrap)
-_setup_symlink() {
-  local symlink_entry="$1"
-  local source target
+# Phase 1: Install Homebrew (if not already installed)
+# Detects ARM (Apple Silicon) vs Intel path, sets up shell environment
+_bootstrap_homebrew() {
+  local brew_path="/opt/homebrew/bin/brew"
+  [[ ! -x "$brew_path" ]] && brew_path="/usr/local/bin/brew"
   
-  # Parse source|target format
-  source="${symlink_entry%|*}"
-  target="${symlink_entry#*|}"
-  
-  # Check if source references $CLOUD_FOLDER but it's not set
-  if [[ "$source" == *'$CLOUD_FOLDER'* ]] && [[ -z "$CLOUD_FOLDER" ]]; then
-    _bootstrap_warning "Skipped: CLOUD_FOLDER not set, needed for: $source"
-    return 1
-  fi
-  
-  # Expand ~ and variables in paths
-  source="${source/\~/$HOME}"
-  target="${target/\~/$HOME}"
-  eval "source=\"$source\""
-  eval "target=\"$target\""
-  
-  # Validate source exists
-  if [[ ! -e "$source" ]]; then
-    _bootstrap_warning "Skipped: source not found: $source"
-    return 1
-  fi
-  
-  # Create parent directory for target if needed
-  local target_dir="$(dirname "$target")"
-  if [[ ! -d "$target_dir" ]]; then
-    mkdir -p "$target_dir" || { _bootstrap_error "Failed to create directory: $target_dir"; return 1; }
-  fi
-  
-  # Backup existing target if it's not already a symlink
-  if [[ -e "$target" ]] || [[ -L "$target" ]]; then
-    if [[ ! -L "$target" ]]; then
-      mv "$target" "$target.backup.$(date +%Y%m%d_%H%M%S)"
-      _bootstrap_info "Backed up existing: $target → $target.backup.*"
-    else
-      # Remove old symlink if it exists
-      rm -f "$target"
-    fi
-  fi
-  
-  # Create symlink
-  ln -sfn "$source" "$target" || { _bootstrap_error "Failed to create symlink: $target"; return 1; }
-  
-  # Set permissions on target (644 for files, 755 for directories)
-  if [[ -d "$source" ]]; then
-    chmod 755 "$target" 2>/dev/null || true
-    
-    # For SSH directories, set stricter permissions on contents
-    if [[ "$target" == *".ssh" ]] || [[ "$target" == "$HOME/.ssh" ]]; then
-      _set_ssh_permissions "$target"
-    fi
-  else
-    chmod 644 "$target" 2>/dev/null || true
-  fi
-  
-  _bootstrap_success "Symlinked: $target → $source"
-  return 0
-}
-
-# Main bootstrap orchestration function
-_bootstrap() {
-  # Homebrew Setup
-  _setup_homebrew_path() {
-    local brew_path
-    [[ -x /opt/homebrew/bin/brew ]] && brew_path="/opt/homebrew/bin/brew" || brew_path="/usr/local/bin/brew"
-    
-    if ! grep -q "brew shellenv" ~/.zprofile 2>/dev/null; then
-      echo "" >> ~/.zprofile
-      echo "eval \"\$($brew_path shellenv)\"" >> ~/.zprofile
-    fi
-    
-    eval "$($brew_path shellenv)"
-  }
-
   if [[ "$OSTYPE" == "darwin"* ]] && ! _has_command brew; then
-    if [[ -x /opt/homebrew/bin/brew ]] || [[ -x /usr/local/bin/brew ]]; then
-      _setup_homebrew_path
-    else
-      echo "Installing Homebrew..."
-      /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-      _setup_homebrew_path
-      echo "Homebrew installed successfully."
-      brew analytics off 2>/dev/null
-      echo "Homebrew analytics disabled."
-    fi
-  fi
-
-  # Custom Symlinks Setup (run early so Brewfile exists for bundle phase)
-  if [ ${#CUSTOM_SYMLINKS[@]} -gt 0 ] && [ ! -f ~/.bootstrapped/symlinks ]; then
-    if [[ -z "$CLOUD_FOLDER" ]]; then
-      _bootstrap_info "CLOUD_FOLDER not set; only non-cloud symlinks will be processed"
-    fi
-    
-    local failed_count=0
-    for symlink_entry in "${CUSTOM_SYMLINKS[@]}"; do
-      _setup_symlink "$symlink_entry" || ((failed_count++))
-    done
-    
-    touch ~/.bootstrapped/symlinks
-    
-    if [[ $failed_count -eq 0 ]]; then
-      _bootstrap_success "Custom symlinks configured successfully."
-    else
-      _bootstrap_warning "Custom symlinks setup completed with $failed_count error(s). Check paths in CUSTOM_SYMLINKS."
-    fi
-  fi
-
-  # Homebrew Bundle (Install packages from Brewfile)
-  if _has_command brew && [[ -r "$HOME/.Brewfile" ]]; then
-    local brewfile_signature=$(cat "$HOME/.Brewfile" 2>/dev/null | md5sum | awk '{print $1}')
-    local brewfile_flag="$HOME/.bootstrapped/brewfile"
-    
-    if _check_signature "$brewfile_flag" "$brewfile_signature" 'echo "Installing packages from Brewfile..."; brew bundle --file="$HOME/.Brewfile" --no-upgrade 2>/dev/null && echo "Homebrew bundle installed successfully." || echo "Homebrew bundle installation completed with warnings."'; then
-      :
-    fi
-  fi
-
-  # macOS Defaults Configuration
-  if _has_command bash && [[ -r "$HOME/.macos-defaults" ]]; then
-    local macos_signature=$(cat "$HOME/.macos-defaults" 2>/dev/null | md5sum | awk '{print $1}')
-    local macos_flag="$HOME/.bootstrapped/macos"
-    
-    if _check_signature "$macos_flag" "$macos_signature" 'echo "Configuring macOS defaults..."; bash "$HOME/.macos-defaults" 2>/dev/null && echo "macOS defaults configured. Restart apps for changes to take effect." || echo "macOS configuration completed with warnings."'; then
-      :
-    fi
-  fi
-
-  # Git Configuration
-  if _has_command git && ([[ -n "$GIT_AUTHOR_NAME" ]] || [[ -n "$GIT_AUTHOR_EMAIL" ]]); then
-    local git_signature="${GIT_AUTHOR_NAME}|${GIT_AUTHOR_EMAIL}"
-    local git_flag="$HOME/.bootstrapped/git"
-    
-    if _check_signature "$git_flag" "$git_signature" 'echo "Configuring git..."; [[ -n "$GIT_AUTHOR_NAME" ]] && git config --global user.name "$GIT_AUTHOR_NAME" && echo "  Set git user.name to: $GIT_AUTHOR_NAME"; [[ -n "$GIT_AUTHOR_EMAIL" ]] && git config --global user.email "$GIT_AUTHOR_EMAIL" && echo "  Set git user.email to: $GIT_AUTHOR_EMAIL"; echo "Git configuration complete."'; then
-      :
-    fi
-  fi
-
-  # Add ~/.bin to PATH if it exists
-  if [[ -d ~/.bin ]] && [[ ! (" ${path[*]} " =~ " $HOME/.bin ") ]]; then
-    path=("$HOME/.bin" $path)
-    export PATH
+    echo "Installing Homebrew..." && /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" 2>&1 | grep -v "^  "
+    eval "$($brew_path shellenv)" && grep -q "brew shellenv" ~/.zprofile || echo "eval \"\$($brew_path shellenv)\"" >> ~/.zprofile
+    brew analytics off 2>/dev/null && echo "Homebrew installed."
   fi
 }
 
-# Run bootstrap on shell initialization
+# Phase 2: Setup custom symlinks (one-time, unless CUSTOM_SYMLINKS changes)
+# Creates symlinks to cloud storage files/folders
+# Backs up existing files with timestamp
+# Returns early if already configured (state file check)
+# Creates Brewfile symlink FIRST so it's available for package installation
+_bootstrap_symlinks() {
+  [[ ${#CUSTOM_SYMLINKS[@]} -eq 0 ]] && return
+  [[ -f ~/.bootstrapped/symlinks ]] && return
+  
+  [[ -z "$CLOUD_FOLDER" ]] && _log "→" "CLOUD_FOLDER not set; processing non-cloud symlinks"
+  
+  # Create Brewfile symlink first (needed for package installation)
+  for s in "${CUSTOM_SYMLINKS[@]}"; do
+    [[ "$s" == *"brewfile.rb"* ]] && _setup_symlink "$s" && break
+  done
+  
+  local failed=0
+  for s in "${CUSTOM_SYMLINKS[@]}"; do
+    [[ "$s" == *"brewfile.rb"* ]] && continue  # Already created above
+    _setup_symlink "$s" || ((failed++))
+  done
+  touch ~/.bootstrapped/symlinks
+  [[ $failed -eq 0 ]] && _log "✓" "Symlinks configured." || _log "⚠" "Symlinks: $failed error(s)"
+  
+  # Clear Brewfile state so packages install immediately if Brewfile was just linked
+  [[ -r "$HOME/.Brewfile" ]] && rm -f ~/.bootstrapped/brewfile
+}
+
+# Phase 3: Install packages via Homebrew Bundle
+# Reads ~/.Brewfile (symlinked from cloud storage)
+# Uses signature-based detection: re-runs only if Brewfile changes
+# --no-upgrade prevents unintended package updates
+_bootstrap_packages() {
+  # Re-check Brewfile after symlink phase (might have just been created)
+  [[ ! -r "$HOME/.Brewfile" ]] && return
+  _has_command brew || return
+  
+  local sig=$(cat "$HOME/.Brewfile" 2>/dev/null | md5sum | awk '{print $1}')
+  _check_signature "$HOME/.bootstrapped/brewfile" "$sig" 'echo "Installing packages..."; brew bundle --file="$HOME/.Brewfile" --no-upgrade 2>/dev/null && echo "Packages installed." || true'
+}
+
+# Phase 4: Apply macOS system defaults
+# Executes ~/.macos-defaults (symlinked from cloud storage)
+# Signature-based: re-runs only if file changes
+_bootstrap_defaults() {
+  _has_command bash && [[ -r "$HOME/.macos-defaults" ]] || return
+  local sig=$(cat "$HOME/.macos-defaults" 2>/dev/null | md5sum | awk '{print $1}')
+  _check_signature "$HOME/.bootstrapped/macos" "$sig" 'bash "$HOME/.macos-defaults" 2>/dev/null && echo "macOS defaults applied." || true'
+}
+
+# Phase 5: Configure Git user (one-time or when credentials change)
+# Sets global git user.name and user.email from CUSTOMIZATION section
+# Skips if both GIT_AUTHOR_NAME and GIT_AUTHOR_EMAIL are empty
+_bootstrap_git() {
+  _has_command git && ([[ -n "$GIT_AUTHOR_NAME" ]] || [[ -n "$GIT_AUTHOR_EMAIL" ]]) || return
+  local sig="${GIT_AUTHOR_NAME}|${GIT_AUTHOR_EMAIL}"
+  _check_signature "$HOME/.bootstrapped/git" "$sig" '[[ -n "$GIT_AUTHOR_NAME" ]] && git config --global user.name "$GIT_AUTHOR_NAME"; [[ -n "$GIT_AUTHOR_EMAIL" ]] && git config --global user.email "$GIT_AUTHOR_EMAIL"; echo "Git configured."'
+}
+
+# Phase 6: Add ~/.bin to PATH (if directory exists)
+# Prioritizes ~/.bin over other PATH entries for personal scripts
+# Only runs once per session (runtime check, not state-based)
+_bootstrap_path() {
+  [[ -d ~/.bin ]] && [[ ! (" ${path[*]} " =~ " $HOME/.bin ") ]] && path=("$HOME/.bin" $path) && export PATH
+}
+
+# BOOTSTRAP ORCHESTRATOR
+# Calls each phase in sequence (Homebrew → Symlinks → Packages → Defaults → Git → PATH)
+# Homebrew creates Brewfile symlink, then packages installs from it
+# Each phase returns early if not needed, making bootstrap idempotent
+_bootstrap() {
+  _bootstrap_homebrew
+  _bootstrap_symlinks
+  _bootstrap_packages
+  _bootstrap_defaults
+  _bootstrap_git
+  _bootstrap_path
+}
+
+# Run bootstrap on every shell initialization
+# Side effects are minimal: most phases return early on subsequent runs
 _bootstrap
 
-# ============================================================================
-# SOURCE PERSONAL ZPROFILE IF IT EXISTS
-# ============================================================================
-# Automatically source personal zprofile after bootstrap (so symlinks are in place)
-# This is optional and only runs if ~/.zprofile exists AND is readable
+# SHELL RUNTIME CONFIGURATION
+# Auto-source personal config files (symlinked from cloud storage)
 [[ -r "$HOME/.zprofile" ]] && source "$HOME/.zprofile" 2>/dev/null || true
-
-# ============================================================================
-# SOURCE ALIASES IF AVAILABLE
-# ============================================================================
-# Auto-source custom aliases after bootstrap (so symlink is in place)
-# This is optional and only runs if ~/.aliases exists AND is readable
 [[ -r "$HOME/.aliases" ]] && source "$HOME/.aliases" 2>/dev/null || true
 
-# ----------------------------------------------------------------------------
-# History Configuration
-# ----------------------------------------------------------------------------
-HISTFILE=~/.zsh_history
-HISTSIZE=10000
-SAVEHIST=10000
+# HISTORY - Maintain 10,000 line history shared across sessions
+HISTFILE=~/.zsh_history HISTSIZE=10000 SAVEHIST=10000
+setopt SHARE_HISTORY HIST_IGNORE_DUPS HIST_IGNORE_SPACE APPEND_HISTORY HIST_EXPIRE_DUPS_FIRST HIST_FIND_NO_DUPS
 
-# ----------------------------------------------------------------------------
-# Shell Options
-# ----------------------------------------------------------------------------
-# History options
-setopt SHARE_HISTORY          # Share history between sessions
-setopt HIST_IGNORE_DUPS       # Don't record duplicate commands
-setopt HIST_IGNORE_SPACE      # Don't record commands starting with space
-setopt APPEND_HISTORY         # Append to history file
-setopt HIST_EXPIRE_DUPS_FIRST # Expire duplicates first when trimming history
-setopt HIST_FIND_NO_DUPS      # Don't show duplicates when searching
+# NAVIGATION & COMPLETION OPTIONS
+setopt AUTO_CD AUTO_PUSHD PUSHD_IGNORE_DUPS PUSHD_SILENT PROMPT_SUBST COMPLETE_IN_WORD ALWAYS_TO_END
+setopt AUTO_MENU AUTO_LIST INTERACTIVE_COMMENTS
 
-# Navigation options
-setopt AUTO_CD                # Change directory without cd command
-setopt AUTO_PUSHD             # Push directories onto stack automatically
-setopt PUSHD_IGNORE_DUPS      # Don't push duplicate directories
-setopt PUSHD_SILENT           # Don't print directory stack after pushd/popd
-
-# Prompt options
-setopt PROMPT_SUBST           # Enable parameter expansion in prompts
-
-# Completion options
-setopt COMPLETE_IN_WORD       # Complete from both ends of word
-setopt ALWAYS_TO_END          # Move cursor to end after completion
-setopt AUTO_MENU              # Show completion menu on successive tab press
-setopt AUTO_LIST              # Automatically list choices on ambiguous completion
-
-# Misc options
-setopt INTERACTIVE_COMMENTS   # Allow comments in interactive shell
-
-# ----------------------------------------------------------------------------
-# Key Bindings
-# ----------------------------------------------------------------------------
-# FZF-based history search on arrow up
+# KEY BINDINGS - FZF history search on up arrow (or fallback to prefix search)
 if (( ${+commands[fzf]} )); then
-  _fzf_history_search() {
-    setopt localoptions noglobsubst noposixbuiltins pipefail no_aliases 2> /dev/null
-    local selected=$(fc -rl 1 | awk '{$1="";print substr($0,2)}' | \
-      awk '!seen[$0]++' | \
-      fzf --reverse --no-sort --exact \
-          --query="$LBUFFER" \
-          --prompt="History > " \
-          --preview='echo {}' --preview-window=down:3:wrap \
-          --bind='ctrl-r:toggle-sort' \
-          --header='Ctrl+R: toggle sort | Enter: execute')
-    if [[ -n $selected ]]; then
-      LBUFFER=$selected
-      zle accept-line
-    fi
+  _fzf_search() {
+    local selected=$(fc -rl 1 | awk '{$1="";print substr($0,2)}' | awk '!seen[$0]++' | fzf --reverse --query="$LBUFFER" --prompt="History > " --bind='ctrl-r:toggle-sort' --header='Ctrl+R: toggle sort')
+    [[ -n $selected ]] && LBUFFER=$selected && zle accept-line
     zle reset-prompt
   }
-  zle -N _fzf_history_search
-  bindkey '^[[A' _fzf_history_search  # Up arrow
+  zle -N _fzf_search && bindkey '^[[A' _fzf_search
 else
-  # Fallback to prefix search if fzf not available
   autoload -Uz up-line-or-beginning-search down-line-or-beginning-search
-  zle -N up-line-or-beginning-search
-  zle -N down-line-or-beginning-search
-  bindkey '^[[A' up-line-or-beginning-search
-  bindkey '^[[B' down-line-or-beginning-search
+  zle -N up-line-or-beginning-search && zle -N down-line-or-beginning-search
+  bindkey '^[[A' up-line-or-beginning-search && bindkey '^[[B' down-line-or-beginning-search
 fi
 
-# ----------------------------------------------------------------------------
-# Completion System
-# ----------------------------------------------------------------------------
+# COMPLETION SYSTEM - Case-insensitive, cached, with approximation
 autoload -Uz compinit && compinit
-
-# Case-insensitive completion
-zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}'
-
-# Highlight current selection in menu
-zstyle ':completion:*' menu select
-
-# Use colors in completion
-zstyle ':completion:*' list-colors ''
-
-# Cache completion for faster loading
-zstyle ':completion:*' use-cache on
-zstyle ':completion:*' cache-path ~/.zsh/cache
-
-# Group completions by type
-zstyle ':completion:*' group-name ''
-zstyle ':completion:*:descriptions' format '%B%d%b'
-
-# Enable approximate completion
-zstyle ':completion:*' completer _complete _approximate
-zstyle ':completion:*:approximate:*' max-errors 1 numeric
-
-# Load colors
+zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}' menu select use-cache on cache-path ~/.zsh/cache
+zstyle ':completion:*' completer _complete _approximate && zstyle ':completion:*:approximate:*' max-errors 1 numeric
 autoload -Uz colors && colors
 
-# ----------------------------------------------------------------------------
-# Prompt Functions
-# ----------------------------------------------------------------------------
-
-# Git command setup
-if (( ${+commands[git]} )); then
-  git="$commands[git]"
-else
-  git="/usr/bin/git"
-fi
-
-# Show git branch with color based on dirty status
-git_dirty() {
-  ! $git status -s &>/dev/null && echo "" && return
-  
-  local branch=$(git_prompt_info) || return
-  local color="%{$fg_bold[green]%}"
-  [[ -n $($git status --porcelain) ]] && color="%{$fg_bold[red]%}"
-  
+# PROMPT FUNCTIONS - Git-aware prompt showing branch and dirty status
+_git_info() {
+  (( ${+commands[git]} )) || return
+  git -C . rev-parse --is-inside-work-tree &>/dev/null || return
+  local branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null) && [[ -n "$branch" ]] || return
+  local color="%{$fg_bold[green]%}" && [[ -n $(git status --porcelain) ]] && color="%{$fg_bold[red]%}"
   echo "on ${color}🌱 $branch%{$reset_color%}"
 }
 
-# Get git branch name
-git_prompt_info() {
-  local ref=$($git symbolic-ref HEAD 2>/dev/null) || return
-  echo "${ref#refs/heads/}"
+# Count unpushed commits
+_unpushed() {
+  (( ${+commands[git]} )) && git -C . rev-parse --is-inside-work-tree &>/dev/null && [[ $(git rev-list @{u}.. 2>/dev/null | wc -l) -gt 0 ]] && echo " with %{$fg_bold[magenta]%}$(git rev-list @{u}.. 2>/dev/null | wc -l) unpushed%{$reset_color%}"
 }
 
-# Show unpushed commits count
-need_push() {
-  ! $git rev-parse --is-inside-work-tree &>/dev/null && return
-  
-  local count=$($git cherry -v @{u} 2>/dev/null | wc -l | tr -d ' ')
-  [[ $count -gt 0 ]] && echo " with %{$fg_bold[magenta]%}$count unpushed%{$reset_color%}"
-}
-
-# Show current directory name
-directory_name() {
-  echo "%{$fg_bold[cyan]%}%1/%\/%{$reset_color%}"
-}
-
-# ----------------------------------------------------------------------------
-# Prompt Configuration
-# ----------------------------------------------------------------------------
-export PROMPT=$'\nIn $(directory_name) $(git_dirty)$(need_push)\n› '
-
-set_prompt() {
-  export RPROMPT="%{$fg_bold[cyan]%}%{$reset_color%}"
-}
-
-precmd() {
-  set_prompt
-}
+# PROMPT - Shows directory (cyan), git branch (green if clean, red if dirty), unpushed count (magenta)
+export PROMPT=$'\nIn %{$fg_bold[cyan]%}%1/%\/%{$reset_color%} $(_git_info)$(_unpushed)\n› '
+precmd() { export RPROMPT="%{$fg_bold[cyan]%}%{$reset_color%}"; }
