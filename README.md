@@ -131,27 +131,27 @@ All customization options are at the **top of `~/.zshrc`** in the **CUSTOMIZATIO
 3. **Shell Aliases** (managed via `~/.aliases` file)
    - Define custom aliases in your `~/.aliases` file
    - Configure source via `CUSTOM_SYMLINKS` to use cloud storage version
-   - Example: `"$CLOUD_FOLDER/system/aliases.txt|~/.aliases"`
+   - Example: `"$CLOUD_FOLDER/shell/aliases.symlink|~/.aliases"`
    - Dots auto-sources from `~/.aliases` if it exists
    - Changes take effect on next shell startup
 
 4. **Vim Configuration** (managed via `~/.vimrc` file)
    - Customize editor settings by modifying `~/.vimrc`
    - Configure source via `CUSTOM_SYMLINKS` to use cloud storage version
-   - Example: `"$CLOUD_FOLDER/system/vimrc.txt|~/.vimrc"`
+   - Example: `"$CLOUD_FOLDER/config/vimrc.symlink|~/.vimrc"`
    - Edit your vim settings directly in the file
 
 5. **macOS Defaults** (`~/.macos-defaults` file)
    - Keyboard repeat, trackpad sensitivity, Finder preferences, Safari dev tools, etc.
    - Configure source via `CUSTOM_SYMLINKS` to use cloud storage version
-   - Example: `"$CLOUD_FOLDER/system/macos-defaults.txt|~/.macos-defaults"`
+   - Example: `"$CLOUD_FOLDER/macos/macos-defaults|~/.macos-defaults"`
    - **Smart detection**: Modifying the file automatically re-applies on next shell startup
    - Each line is a separate `defaults write` command (easy to read and modify)
 
 6. **npm Packages** (`~/.npmrc-packages` file)
    - Global npm packages installed via `npm install -g`
    - Configure source via `CUSTOM_SYMLINKS` to use cloud storage version
-   - Example: `"$CLOUD_FOLDER/system/npmrc-packages.txt|~/.npmrc-packages"`
+   - Example: `"$CLOUD_FOLDER/packages/npmrc-packages|~/.npmrc-packages"`
    - **Smart detection**: Modifying the file automatically re-installs packages on next shell startup
    - One package per line, comments with `#` are ignored
    - Example file:
