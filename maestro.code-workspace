@@ -1,11 +1,11 @@
 {
   "folders": [
     {
-      "name": "Maestro Dots Cloud",
+      "name": "Personal dots in the cloud",
       "path": "../Library/Mobile Documents/com~apple~CloudDocs/Dotfiles"
     },
     {
-      "name": ".dotfiles",
+      "name": "~/.dotfiles",
       "path": "."
     }
   ],
