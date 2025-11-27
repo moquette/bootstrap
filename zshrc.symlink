@@ -1,13 +1,81 @@
 #!/usr/bin/env zsh
-# shellcheck shell=bash disable=SC2034,SC2154,SC1036,SC1090,SC1091,SC2155,SC2088,SC2206,SC2076,SC1087,SC2016,SC2015,SC1083,SC2299
-# ZSH Configuration - Single-file maestro for macOS
+# shellcheck shell=bash disable=SC2034,SC2154,SC1036,SC1090,SC1091,SC2155,SC2088,SC2206,SC2076,SC1087,SC2016,SC2015,SC1083,SC2298,SC2299,SC3050,SC3011,SC3010,SC2296
+# ZSH Configuration - Single-file dotfiles orchestrator for macOS
 
-# CUSTOMIZATION - Edit these values to personalize your setup
-CLOUD_FOLDER="$HOME/Library/Mobile Documents/com~apple~CloudDocs/Maestro"
+# Ensure basic PATH is set (required for commands like readlink, dirname, date)
+[[ -z "$PATH" ]] && export PATH="/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 
-# STATE & BACKUP - Location for maestro state files and backup naming
-# Derive repo location from this script's path (works regardless of clone name)
-MAESTRO_REPO="$(cd "$(dirname "$(readlink ~/.zshrc 2>/dev/null || echo ~/.zshrc)")" && pwd)"
+# =============================================================================
+# CONFIGURATION - The two essential variables for portability
+# =============================================================================
+#
+# MAESTRO_REPO: Where this git repository lives (the public orchestrator)
+#   - Auto-derived from this script's actual location
+#   - Self-healing: Move/rename the repo, source zshrc.symlink, ~/.zshrc auto-updates
+#
+# CLOUD_FOLDER: Where your private configs live (secrets, personal settings)
+#   - Must be set manually (no way to auto-derive)
+#   - Change this path when setting up on a new machine or moving storage
+#
+# Everything else derives from these two. Change them, source ~/.zshrc, done.
+# =============================================================================
+
+# Self-healing: Detect actual script location and auto-fix ~/.zshrc if needed
+# This handles repo relocation - just source the new location and symlink auto-updates
+# shellcheck disable=SC2296,SC2086
+_SCRIPT_PATH="${${(%):-%x}:A}"  # Absolute path to this script (zsh-specific, not bash)
+_EXPECTED_PATH="$(readlink ~/.zshrc 2>/dev/null)"
+
+if [[ -n "$_SCRIPT_PATH" && "$_SCRIPT_PATH" != "$_EXPECTED_PATH" ]]; then
+  # ~/.zshrc either doesn't exist, is broken, or points elsewhere
+  if [[ -f ~/.zshrc && ! -L ~/.zshrc ]]; then
+    # ~/.zshrc is a regular file - back it up first
+    mv ~/.zshrc ~/.zshrc.backup."$(date +%Y%m%d_%H%M%S)"
+    echo "  ↻ Backed up existing ~/.zshrc, creating symlink"
+  elif [[ -L ~/.zshrc ]]; then
+    echo "  ↻ Updating ~/.zshrc symlink (repo relocated)"
+  else
+    echo "  ↻ Creating ~/.zshrc symlink"
+  fi
+  ln -sf "$_SCRIPT_PATH" ~/.zshrc
+fi
+
+# Derive MAESTRO_REPO from actual script location (now guaranteed correct)
+MAESTRO_REPO="${MAESTRO_REPO:-$(dirname "$_SCRIPT_PATH")}"
+
+# Self-healing: Derive CLOUD_FOLDER from existing symlink target
+# If ~/.ssh points to .../Maestro/ssh.symlink, we can derive Maestro's location
+# Also handles folder rename: if symlink is broken, search parent dir for moved folder
+_CLOUD_DERIVED=""
+if [[ -L ~/.ssh ]]; then
+  _ssh_target="$(readlink ~/.ssh)"
+  # Remove trailing slash if present (symlinks sometimes have it)
+  _ssh_target="${_ssh_target%/}"
+  # ~/.ssh -> .../Maestro/ssh.symlink, extract .../Maestro
+  _CLOUD_DERIVED="$(dirname "$_ssh_target")"
+
+  # Validate it looks like a real cloud folder (has expected structure)
+  if [[ ! -d "$_CLOUD_DERIVED/shell" ]]; then
+    # Symlink is broken (folder was renamed). Search parent dir for the moved folder.
+    # Look for any sibling folder that contains both ssh.symlink/ and shell/
+    _parent_dir="$(dirname "$_CLOUD_DERIVED")"
+    _CLOUD_DERIVED=""  # Reset, will search
+    if [[ -d "$_parent_dir" ]]; then
+      # Use find instead of glob to handle spaces in paths correctly
+      while IFS= read -r _candidate; do
+        if [[ -d "$_candidate/ssh.symlink" && -d "$_candidate/shell" ]]; then
+          _CLOUD_DERIVED="$_candidate"
+          break
+        fi
+      done < <(find "$_parent_dir" -maxdepth 1 -type d 2>/dev/null)
+    fi
+  fi
+fi
+
+# Fallback chain: env var → derived from symlink → hardcoded default
+CLOUD_FOLDER="${CLOUD_FOLDER:-${_CLOUD_DERIVED:-$HOME/Library/Mobile Documents/com~apple~CloudDocs/Dotfiles}}"
+
+# Derived paths - do not edit
 MAESTRO_STATE="$MAESTRO_REPO/.state"
 BACKUP_SUFFIX=".backup.$(date +%Y%m%d_%H%M%S)"
 

@@ -2,10 +2,10 @@
   "folders": [
     {
       "name": "Maestro Dots Cloud",
-      "path": "/Users/moquette/Library/Mobile Documents/com~apple~CloudDocs/Maestro"
+      "path": "../Library/Mobile Documents/com~apple~CloudDocs/Dotfiles"
     },
     {
-      "name": "Dots",
+      "name": ".dotfiles",
       "path": "."
     }
   ],
