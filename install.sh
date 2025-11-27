@@ -12,7 +12,7 @@
 
 set -e
 
-REPO_URL="${MAESTRO_REPO_URL:-https://github.com/moquette/dotfiles.git}"
+REPO_URL="${MAESTRO_REPO_URL:-https://github.com/moquette/maestro.git}"
 INSTALL_DIR="${MAESTRO_INSTALL_DIR:-$HOME/.dotfiles}"
 
 # Colors for output
