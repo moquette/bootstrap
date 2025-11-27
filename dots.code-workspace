@@ -19,6 +19,7 @@
     "workbench.colorTheme": "Default Dark Modern",
     "workbench.editor.enablePreview": true,
     "workbench.editor.enablePreviewFromQuickOpen": false,
+    "editor.minimap.enabled": false,
 
     // Git settings
     "git.confirmSync": false,
