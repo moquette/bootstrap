@@ -20,7 +20,7 @@ That's it. On a fresh macOS system, this will:
 
 ### 🚀 Auto-Setup (Idempotent Dots Phases)
 
-- **Custom Symlinks** (one-time): Creates symlinks for dotfiles, SSH keys, scripts, and other files/directories from cloud storage using the `CUSTOM_SYMLINKS` array
+- **Custom Symlinks** (one-time): Creates symlinks for dotfiles, SSH keys, scripts, and other files/directories from cloud storage using convention-based auto-discovery (`.symlink` extension) and the `CUSTOM_SYMLINKS` array for edge cases
 - **Homebrew**: Auto-installs if missing, with PATH configuration
 - **Packages**: Installs packages from `~/.Brewfile` with smart change detection (re-installs when file changes)
 - **npm Packages**: Installs global npm packages from `~/.npmrc-packages` with smart change detection (re-installs when file changes)
@@ -96,6 +96,12 @@ All customization options are at the **top of `~/.zshrc`** in the **CUSTOMIZATIO
 
 2. **Custom Symlinks** (`CUSTOM_SYMLINKS` array - optional)
    - Create symlinks for files and directories from cloud storage or any source
+   - **Convention-based auto-discovery**: Files/folders ending in `.symlink` are automatically discovered
+     - `basename.symlink` → `~/.basename`
+     - `folder.symlink/` → `~/.folder/`
+     - Example: `aliases.symlink` → `~/.aliases`
+     - Example: `ssh.symlink/` → `~/.ssh/`
+   - **Explicit array**: Use for edge cases (no leading dot, custom paths, renamed targets)
    - Format: `"source|target"` (pipe-separated)
    - Supports variables like `$HOME` and `$CLOUD_FOLDER`
    - Automatic permission handling:
@@ -107,13 +113,20 @@ All customization options are at the **top of `~/.zshrc`** in the **CUSTOMIZATIO
    - Examples:
 
      ```bash
+     # Convention-based (auto-discovered from iCloud):
+     # Just rename files in $CLOUD_FOLDER:
+     #   ssh/ → ssh.symlink/
+     #   aliases.txt → aliases.symlink
+     #   gitconfig.txt → gitconfig.symlink
+     
+     # Explicit array (for edge cases):
      CUSTOM_SYMLINKS=(
-       "$CLOUD_FOLDER/ssh|~/.ssh"
-       "$CLOUD_FOLDER/bin|~/.bin"
-       "$CLOUD_FOLDER/gitconfig|~/.gitconfig"
-       "$CLOUD_FOLDER/config/nvim|~/.config/nvim"
+       "$CLOUD_FOLDER/Code.symlink|~/Code"  # No leading dot
+       "$CLOUD_FOLDER/notes.symlink|~/Documents/Notes"  # Custom path
      )
      ```
+   
+   See [MIGRATION.md](MIGRATION.md) for migrating to convention-based naming.
 
 3. **Shell Aliases** (managed via `~/.aliases` file)
    - Define custom aliases in your `~/.aliases` file

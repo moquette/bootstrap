@@ -1,5 +1,5 @@
 #!/usr/bin/env zsh
-# shellcheck shell=bash disable=SC2034,SC2154,SC1090,SC1091,SC2155,SC2088,SC2206,SC2076,SC1087,SC2016,SC2015,SC1083
+# shellcheck shell=bash disable=SC2034,SC2154,SC1036,SC1090,SC1091,SC2155,SC2088,SC2206,SC2076,SC1087,SC2016,SC2015,SC1083,SC2299
 # ZSH Configuration - Single-file dots for macOS
 
 # CUSTOMIZATION - Edit these values to personalize your setup
@@ -9,21 +9,23 @@ CLOUD_FOLDER="$HOME/Library/Mobile Documents/com~apple~CloudDocs/Dots"
 DOTS_STATE="$HOME/.dots"
 BACKUP_SUFFIX=".backup.$(date +%Y%m%d_%H%M%S)"
 
-# Custom Symlinks (Optional - one-time setup after first run)
+# Custom Symlinks (Optional - explicit mappings for edge cases)
 # Format: CUSTOM_SYMLINKS=("source|target" "source|target" ...)
+# Use for: non-standard paths, renamed targets, nested directories
 # Permissions: 755 for directories (644 for files), SSH keys get 600/644
+# 
+# Convention-based symlinks (auto-discovered):
+#   - Files/folders ending in .symlink are auto-discovered
+#   - basename.symlink → ~/.basename
+#   - Example: aliases.symlink → ~/.aliases
+#   - Example: ssh.symlink/ → ~/.ssh/
 CUSTOM_SYMLINKS=(
-  "$CLOUD_FOLDER/ssh|~/.ssh"
-  "$CLOUD_FOLDER/bin|~/.bin"
-  "$CLOUD_FOLDER/system/zprofile.zsh|~/.zprofile"
-  "$CLOUD_FOLDER/system/zlogout.txt|~/.zlogout"
-  "$CLOUD_FOLDER/system/vimrc.txt|~/.vimrc"
-  "$CLOUD_FOLDER/system/aliases.txt|~/.aliases"
-  "$CLOUD_FOLDER/system/gitconfig.txt|~/.gitconfig"
-  "$CLOUD_FOLDER/system/brewfile.rb|~/.Brewfile"
-  "$CLOUD_FOLDER/system/macos-defaults.txt|~/.macos-defaults"
-  "$CLOUD_FOLDER/system/npmrc-packages.txt|~/.npmrc-packages"
-  "$CLOUD_FOLDER/system/zshrc.local.txt|~/.zshrc.local"
+  # Add explicit mappings here for edge cases
+  # Example: "$CLOUD_FOLDER/Code.symlink|~/Code"  # No leading dot
+  "$CLOUD_FOLDER/ai/claude/CLAUDE.md|~/.claude/CLAUDE.md"
+  "$CLOUD_FOLDER/ai/claude/CLAUDE.md|~/.claude/README.md"
+  "$CLOUD_FOLDER/ai/mcps/claude/claude_desktop_config.json|~/Library/Application Support/Claude/claude_desktop_config.json"
+  "$CLOUD_FOLDER/ai/mcps/vscode/mcp.json|~/Library/Application Support/Code/User/mcp.json"
 )
 
 # DOTS HELPERS - Detection & Formatting
@@ -68,16 +70,33 @@ _setup_symlink() {
   source_exp=$(_expand_path "$source") || { _log "⚠" "Skipped: CLOUD_FOLDER not set for $source"; return 1; }
   target_exp=$(_expand_path "$target") || return 1
   [[ ! -e "$source_exp" ]] && { _log "⚠" "Skipped: source not found: $source_exp"; return 1; }
+  
+  # Check if symlink needs updating
+  local needs_update=false
+  if [[ -L "$target_exp" ]]; then
+    local current_target=$(readlink "$target_exp")
+    [[ "$current_target" != "$source_exp" ]] && needs_update=true
+  else
+    needs_update=true
+  fi
+  
   mkdir -p "$(dirname "$target_exp")" || return 1
   [[ (-e "$target_exp" || -L "$target_exp") && ! -L "$target_exp" ]] && mv "$target_exp" "$target_exp$BACKUP_SUFFIX"
   ln -sfn "$source_exp" "$target_exp" || return 1
+  
   if [[ -d "$source_exp" ]]; then
     chmod 755 "$source_exp" 2>/dev/null || true
     [[ "$target_exp" == *".ssh" ]] && _set_ssh_permissions "$source_exp"
   else
     chmod 644 "$source_exp" 2>/dev/null || true
   fi
-  _log "✓" "Symlinked: $target_exp"
+  
+  if [[ "$needs_update" == true ]]; then
+    _log "↻" "Updated symlink: $target_exp"
+    return 0
+  else
+    return 2  # Already correct
+  fi
 }
 
 # DOTS PHASES - Each phase is self-contained and idempotent
@@ -86,20 +105,79 @@ _setup_symlink() {
 # Dependencies: symlinks creates ~/.bin (used by _dots_path)
 
 _dots_symlinks() {
-  [[ ${#CUSTOM_SYMLINKS[@]} -eq 0 ]] && return
-  [[ -f "$DOTS_STATE/symlinks" ]] && return
-  [[ -z "$CLOUD_FOLDER" ]] && _log "→" "CLOUD_FOLDER not set; processing non-cloud symlinks"
+  [[ -z "$CLOUD_FOLDER" ]] && _log "→" "CLOUD_FOLDER not set; skipping symlinks"
+  [[ ! -d "$CLOUD_FOLDER" ]] && return
+  
   mkdir -p "$DOTS_STATE"
-  local failed=0 succeeded=0
+  
+  # Track processed sources to avoid duplicates
+  typeset -A processed_sources
+  local failed=0 succeeded=0 updated=0 skipped=0
+  local -a updated_links
+  
+  # Phase 1: Process explicit CUSTOM_SYMLINKS (takes priority)
   for s in "${CUSTOM_SYMLINKS[@]}"; do
-    if _setup_symlink "$s"; then
+    # Extract source from source|target format
+    local src="${s%%|*}"
+    src="$(_expand_path "$src")"
+    
+    # Mark this source as processed
+    processed_sources[$src]=1
+    
+    _setup_symlink "$s"
+    local result=$?
+    if [[ $result -eq 0 ]]; then
+      ((updated++))
+      ((succeeded++))
+      updated_links+=("$s")
+    elif [[ $result -eq 2 ]]; then
+      ((skipped++))
       ((succeeded++))
     else
       ((failed++))
     fi
   done
-  touch "$DOTS_STATE/symlinks"
-  [[ $failed -eq 0 ]] && _log "✓" "Symlinks: $succeeded configured" || _log "⚠" "Symlinks: $succeeded OK, $failed failed"
+  
+  # Phase 2: Auto-discover convention-based .symlink files/folders
+  # Match only .symlink files/dirs, not their contents
+  # shellcheck disable=SC2206,SC2296,SC1036,SC1088
+  local symlink_files=()
+  symlink_files+=($CLOUD_FOLDER/**/*.symlink(N.))  # Files only
+  symlink_files+=($CLOUD_FOLDER/**/*.symlink/(N/)) # Directories only
+  
+  for src in "${symlink_files[@]}"; do
+    # Skip if already processed by explicit array
+    [[ -n "${processed_sources[$src]}" ]] && continue
+    
+    # Mark as processed
+    processed_sources[$src]=1
+    # Get the basename without .symlink extension
+    # shellcheck disable=SC2296,SC1087,SC2248
+    local basename="${${src:t}%.symlink}"
+    
+    # Target is ~/.basename (always add leading dot)
+    local dst="$HOME/.$basename"
+    
+    # Create source|target format for _setup_symlink
+    local entry="$src|$dst"
+    
+    _setup_symlink "$entry"
+    local result=$?
+    if [[ $result -eq 0 ]]; then
+      ((updated++))
+      ((succeeded++))
+      updated_links+=("$entry")
+    elif [[ $result -eq 2 ]]; then
+      ((skipped++))
+      ((succeeded++))
+    else
+      ((failed++))
+    fi
+  done
+  
+  [[ $updated -gt 0 ]] && _log "✓" "Symlinks: $updated updated, $((updated + skipped)) total"
+  [[ $updated -eq 0 && $skipped -gt 0 ]] && return 0  # Silent if all correct
+  [[ $failed -gt 0 ]] && _log "⚠" "Symlinks: $failed failed"
 }
 
 _dots_homebrew() {

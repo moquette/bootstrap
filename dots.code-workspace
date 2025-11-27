@@ -24,15 +24,26 @@
     "git.autofetch": true,
     "git.ignoredRepositories": ["${workspaceFolder:My Cloud}"],
 
-    // File associations - treat your .txt configs as shell scripts
+    // File associations - treat your config files with proper syntax highlighting
     "files.associations": {
       "aliases.txt": "shellscript",
+      "aliases.symlink": "shellscript",
       "zshrc.local.txt": "shellscript",
+      "zshrc.local.symlink": "shellscript",
       "npmrc-packages.txt": "plaintext",
+      "npmrc-packages.symlink": "plaintext",
       "vimrc.txt": "viml",
+      "vimrc.symlink": "viml",
       "gitconfig.txt": "properties",
+      "gitconfig.symlink": "properties",
       "macos-defaults.txt": "shellscript",
-      "brewfile.rb": "ruby"
+      "macos-defaults.symlink": "shellscript",
+      "brewfile.rb": "ruby",
+      "Brewfile.symlink": "ruby",
+      "zprofile.zsh": "shellscript",
+      "zprofile.symlink": "shellscript",
+      "zlogout.txt": "shellscript",
+      "zlogout.symlink": "shellscript"
     },
 
     // File exclusions
