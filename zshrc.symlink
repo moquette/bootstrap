@@ -1,14 +1,14 @@
 #!/usr/bin/env zsh
 # shellcheck shell=bash disable=SC2034,SC2154,SC1036,SC1090,SC1091,SC2155,SC2088,SC2206,SC2076,SC1087,SC2016,SC2015,SC1083,SC2299
-# ZSH Configuration - Single-file dots for macOS
+# ZSH Configuration - Single-file maestro for macOS
 
 # CUSTOMIZATION - Edit these values to personalize your setup
-CLOUD_FOLDER="$HOME/Library/Mobile Documents/com~apple~CloudDocs/Dots"
+CLOUD_FOLDER="$HOME/Library/Mobile Documents/com~apple~CloudDocs/Maestro"
 
-# STATE & BACKUP - Location for dots state files and backup naming
+# STATE & BACKUP - Location for maestro state files and backup naming
 # Derive repo location from this script's path (works regardless of clone name)
-DOTS_REPO="$(cd "$(dirname "$(readlink ~/.zshrc 2>/dev/null || echo ~/.zshrc)")" && pwd)"
-DOTS_STATE="$DOTS_REPO/.state"
+MAESTRO_REPO="$(cd "$(dirname "$(readlink ~/.zshrc 2>/dev/null || echo ~/.zshrc)")" && pwd)"
+MAESTRO_STATE="$MAESTRO_REPO/.state"
 BACKUP_SUFFIX=".backup.$(date +%Y%m%d_%H%M%S)"
 
 # Custom Symlinks (Optional - explicit mappings for edge cases)
@@ -99,16 +99,16 @@ _setup_symlink() {
   fi
 }
 
-# DOTS PHASES - Each phase is self-contained and idempotent
-# State files stored in $DOTS_STATE with signatures to detect content changes
+# MAESTRO PHASES - Each phase is self-contained and idempotent
+# State files stored in $MAESTRO_STATE with signatures to detect content changes
 # Order: symlinks → homebrew → packages → defaults → path
-# Dependencies: symlinks creates ~/.bin (used by _dots_path)
+# Dependencies: symlinks creates ~/.bin (used by _maestro_path)
 
-_dots_symlinks() {
+_maestro_symlinks() {
   [[ -z "$CLOUD_FOLDER" ]] && _log "→" "CLOUD_FOLDER not set; skipping symlinks"
   [[ ! -d "$CLOUD_FOLDER" ]] && return
   
-  mkdir -p "$DOTS_STATE"
+  mkdir -p "$MAESTRO_STATE"
   
   # Track processed sources to avoid duplicates
   typeset -A processed_sources
@@ -140,10 +140,10 @@ _dots_symlinks() {
   
   # Phase 2: Auto-discover convention-based .symlink files/folders
   # Match only .symlink files/dirs, not their contents
-  # Scans both DOTS_REPO (for zshrc.symlink) and CLOUD_FOLDER (for user configs)
+  # Scans both MAESTRO_REPO (for zshrc.symlink) and CLOUD_FOLDER (for user configs)
   # shellcheck disable=SC2206,SC2296,SC1036,SC1088
   local symlink_files=()
-  symlink_files+=($DOTS_REPO/*.symlink(N.))        # Repo root files (e.g., zshrc.symlink)
+  symlink_files+=($MAESTRO_REPO/*.symlink(N.))        # Repo root files (e.g., zshrc.symlink)
   symlink_files+=($CLOUD_FOLDER/**/*.symlink(N.))  # Cloud folder files
   symlink_files+=($CLOUD_FOLDER/**/*.symlink/(N/)) # Cloud folder directories
   
@@ -177,61 +177,60 @@ _dots_symlinks() {
     fi
   done
   
-  [[ $updated -gt 0 ]] && _log "✓" "Symlinks: $updated updated, $((updated + skipped)) total"
-  [[ $updated -eq 0 && $skipped -gt 0 ]] && return 0  # Silent if all correct
-  [[ $failed -gt 0 ]] && _log "⚠" "Symlinks: $failed failed"
+  [[ $failed -gt 0 ]] && _log "⚠" "Symlinks: $failed broken"
+  [[ $updated -gt 0 ]] && _log "✓" "Symlinks: $updated updated"
 }
 
-_dots_homebrew() {
+_maestro_homebrew() {
   [[ "$OSTYPE" != "darwin"* ]] && return
   _has_command brew && return
-  echo "Installing Homebrew..."
+  _log "↻" "Installing Homebrew..."
   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" 2>&1 | grep -vE "^  |^- |^==> Next steps"
   local brew_path="/opt/homebrew/bin/brew"
   [[ ! -x "$brew_path" ]] && brew_path="/usr/local/bin/brew"
-  [[ ! -x "$brew_path" ]] && { echo "Homebrew install failed."; return 1; }
-  eval "$($brew_path shellenv)" && export PATH
-  [[ -f ~/.zprofile ]] && ! grep -q "brew shellenv" ~/.zprofile && echo "eval \"\$($brew_path shellenv)\"" >> ~/.zprofile
-  brew analytics off 2>/dev/null && echo "Homebrew installed."
+  [[ ! -x "$brew_path" ]] && { _log "✗" "Homebrew install failed"; return 1; }
+  eval "$("$brew_path" shellenv)" && export PATH
+  [[ -f ~/.zprofile ]] && ! grep -q "brew shellenv" ~/.zprofile && echo "eval \"\$("$brew_path" shellenv)\"" >> ~/.zprofile
+  brew analytics off 2>/dev/null && _log "✓" "Homebrew installed"
 }
 
-_dots_packages() {
+_maestro_packages() {
   _has_command brew || return
   [[ ! -r "$HOME/.Brewfile" ]] && return
-  _run_if_changed "$HOME/.Brewfile" "$DOTS_STATE/Brewfile" \
-    'echo "Installing packages..."; brew bundle --file="$HOME/.Brewfile" --no-upgrade 2>/dev/null && echo "Packages installed." || true'
+  _run_if_changed "$HOME/.Brewfile" "$MAESTRO_STATE/Brewfile" \
+    '_log "↻" "Installing packages..."; brew bundle --file="$HOME/.Brewfile" --no-upgrade 2>/dev/null && _log "✓" "Packages installed" || true'
 }
 
-_dots_npm_packages() {
+_maestro_npm_packages() {
   _has_command npm || return
   local npm_file="$CLOUD_FOLDER/packages/npmrc-packages"
   [[ ! -r "$npm_file" ]] && return
-  _run_if_changed "$npm_file" "$DOTS_STATE/npm" \
-    "echo 'Installing npm packages...'; cat \"$npm_file\" | grep -v '^#' | grep -v '^\$' | xargs -I {} npm install -g {} 2>/dev/null && echo 'npm packages installed.' || true"
+  _run_if_changed "$npm_file" "$MAESTRO_STATE/npm" \
+    "_log '↻' 'Installing npm packages...'; cat \"$npm_file\" | grep -v '^#' | grep -v '^\$' | xargs -I {} npm install -g {} 2>/dev/null && _log '✓' 'npm packages installed' || true"
 }
 
-_dots_os_defaults() {
+_maestro_os_defaults() {
   local defaults_file="$CLOUD_FOLDER/macos/macos-defaults"
   [[ ! -r "$defaults_file" ]] && return
-  _run_if_changed "$defaults_file" "$DOTS_STATE/macos" \
-    "bash \"$defaults_file\" 2>/dev/null && echo 'macOS defaults applied.' || true"
+  _run_if_changed "$defaults_file" "$MAESTRO_STATE/macos" \
+    "bash \"$defaults_file\" 2>/dev/null && _log '✓' 'macOS defaults applied' || true"
 }
 
-_dots_path() {
+_maestro_path() {
   [[ -d ~/.bin ]] && [[ ! (" ${path[*]} " =~ " $HOME/.bin ") ]] && path=("$HOME/.bin" $path) && export PATH
 }
 
-_dots() {
-  mkdir -p "$DOTS_STATE"
-  _dots_symlinks
-  _dots_homebrew
-  _dots_packages
-  _dots_npm_packages
-  _dots_os_defaults
-  _dots_path
+_maestro() {
+  mkdir -p "$MAESTRO_STATE"
+  _maestro_symlinks
+  _maestro_homebrew
+  _maestro_packages
+  _maestro_npm_packages
+  _maestro_os_defaults
+  _maestro_path
 }
 
-_dots
+_maestro
 
 # SHELL CONFIGURATION
 [[ -r "$HOME/.zprofile" ]] && source "$HOME/.zprofile" 2>/dev/null || true
@@ -296,7 +295,7 @@ precmd() { export RPROMPT="%{$fg_bold[cyan]%}%{$reset_color%}"; }
 # You can extend this orchestrator in ~/.zshrc.local using these helpers:
 #   - _has_command <cmd>         - Check if command exists
 #   - _run_if_changed <file> <state-key> '<command>'  - Run only when file changes
-#   - $DOTS_STATE                - State directory (~/.dots/)
-# Example: _has_command myapp && _run_if_changed "$HOME/.myapp/config" "$DOTS_STATE/myapp" 'myapp setup'
+#   - $MAESTRO_STATE             - State directory (~/.maestro/.state/)
+# Example: _has_command myapp && _run_if_changed "$HOME/.myapp/config" "$MAESTRO_STATE/myapp" 'myapp setup'
 [[ -r "$HOME/.zshrc.local" ]] && source "$HOME/.zshrc.local" 2>/dev/null || true
 
