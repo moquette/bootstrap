@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Maestro One-Line Installer
+# Dotfiles One-Line Installer
 # Usage: curl -fsSL https://raw.githubusercontent.com/moquette/dotfiles/main/install.sh | bash
 #
 # What this does:
@@ -12,8 +12,8 @@
 
 set -e
 
-REPO_URL="${MAESTRO_REPO_URL:-https://github.com/moquette/maestro.git}"
-INSTALL_DIR="${MAESTRO_INSTALL_DIR:-$HOME/.dotfiles}"
+REPO_URL="${DOTFILES_REPO_URL:-https://github.com/moquette/dotfiles.git}"
+INSTALL_DIR="${DOTFILES_INSTALL_DIR:-$HOME/.dotfiles}"
 
 # Colors for output
 RED='\033[0;31m'
@@ -32,7 +32,7 @@ command -v git >/dev/null 2>&1 || error "Git is required. Install Xcode Command 
 
 # Clone or update the repository
 if [[ -d "$INSTALL_DIR/.git" ]]; then
-  log "Updating existing Maestro installation..."
+  log "Updating existing dotfiles installation..."
   git -C "$INSTALL_DIR" pull --ff-only 2>/dev/null || warn "Could not update (uncommitted changes?)"
   success "Repository updated"
 else
@@ -41,7 +41,7 @@ else
     log "Backing up to ${INSTALL_DIR}.backup.$(date +%Y%m%d_%H%M%S)"
     mv "$INSTALL_DIR" "${INSTALL_DIR}.backup.$(date +%Y%m%d_%H%M%S)"
   fi
-  log "Cloning Maestro to $INSTALL_DIR..."
+  log "Cloning dotfiles to $INSTALL_DIR..."
   git clone "$REPO_URL" "$INSTALL_DIR" || error "Failed to clone repository"
   success "Repository cloned"
 fi
@@ -64,7 +64,7 @@ ln -sf "$ORCHESTRATOR" ~/.zshrc
 success "Created ~/.zshrc → $ORCHESTRATOR"
 
 # Source the orchestrator
-log "Bootstrapping Maestro..."
+log "Bootstrapping dotfiles..."
 echo ""
 # Use zsh to source since the orchestrator is zsh-specific
 if command -v zsh >/dev/null 2>&1; then
@@ -75,7 +75,7 @@ fi
 
 echo ""
 echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo -e "${GREEN}  Maestro installed successfully!${NC}"
+echo -e "${GREEN}  Dotfiles installed successfully!${NC}"
 echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""
 echo "  Next steps:"

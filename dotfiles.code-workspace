@@ -18,7 +18,7 @@
     "editor.minimap.enabled": false,
     "git.confirmSync": false,
     "git.autofetch": true,
-    "git.ignoredRepositories": ["${workspaceFolder:Maestro Cloud}"],
+    "git.ignoredRepositories": ["${workspaceFolder:My Cloud .dotfiles}"],
     "files.associations": {
       "aliases.txt": "shellscript",
       "aliases.symlink": "shellscript",
@@ -59,16 +59,16 @@
         "problemMatcher": []
       },
       {
-        "label": "Test Maestro Setup",
+        "label": "Test Dotfiles Setup",
         "type": "shell",
         "command": "zsh",
-        "args": ["${workspaceFolder:Maestro Cloud}/bin.symlink/test-maestro"],
+        "args": ["${workspaceFolder:My Cloud .dotfiles}/bin.symlink/test-dots"],
         "problemMatcher": []
       },
       {
-        "label": "Reset Maestro State",
+        "label": "Reset Dotfiles State",
         "type": "shell",
-        "command": "rm -rf ~/.maestro/.state && echo '✓ Maestro state reset'",
+        "command": "rm -rf ~/.dotfiles/.state && echo '✓ Dotfiles state reset'",
         "problemMatcher": []
       }
     ]

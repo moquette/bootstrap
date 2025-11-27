@@ -9,7 +9,7 @@
 # CONFIGURATION - The two essential variables for portability
 # =============================================================================
 #
-# MAESTRO_REPO: Where this git repository lives (the public orchestrator)
+# DOTFILES_REPO: Where this git repository lives (the public orchestrator)
 #   - Auto-derived from this script's actual location
 #   - Self-healing: Move/rename the repo, source zshrc.symlink, ~/.zshrc auto-updates
 #
@@ -40,18 +40,18 @@ if [[ -n "$_SCRIPT_PATH" && "$_SCRIPT_PATH" != "$_EXPECTED_PATH" ]]; then
   ln -sf "$_SCRIPT_PATH" ~/.zshrc
 fi
 
-# Derive MAESTRO_REPO from actual script location (now guaranteed correct)
-MAESTRO_REPO="${MAESTRO_REPO:-$(dirname "$_SCRIPT_PATH")}"
+# Derive DOTFILES_REPO from actual script location (now guaranteed correct)
+DOTFILES_REPO="${DOTFILES_REPO:-$(dirname "$_SCRIPT_PATH")}"
 
 # Self-healing: Derive CLOUD_FOLDER from existing symlink target
-# If ~/.ssh points to .../Maestro/ssh.symlink, we can derive Maestro's location
+# If ~/.ssh points to .../Dotfiles/ssh.symlink, we can derive Dotfiles' location
 # Also handles folder rename: if symlink is broken, search parent dir for moved folder
 _CLOUD_DERIVED=""
 if [[ -L ~/.ssh ]]; then
   _ssh_target="$(readlink ~/.ssh)"
   # Remove trailing slash if present (symlinks sometimes have it)
   _ssh_target="${_ssh_target%/}"
-  # ~/.ssh -> .../Maestro/ssh.symlink, extract .../Maestro
+  # ~/.ssh -> .../Dotfiles/ssh.symlink, extract .../Dotfiles
   _CLOUD_DERIVED="$(dirname "$_ssh_target")"
 
   # Validate it looks like a real cloud folder (has expected structure)
@@ -76,7 +76,7 @@ fi
 CLOUD_FOLDER="${CLOUD_FOLDER:-${_CLOUD_DERIVED:-$HOME/Library/Mobile Documents/com~apple~CloudDocs/Dotfiles}}"
 
 # Derived paths - do not edit
-MAESTRO_STATE="$MAESTRO_REPO/.state"
+DOTFILES_STATE="$DOTFILES_REPO/.state"
 BACKUP_SUFFIX=".backup.$(date +%Y%m%d_%H%M%S)"
 
 # Custom Symlinks (Optional - explicit mappings for edge cases)
@@ -167,16 +167,16 @@ _setup_symlink() {
   fi
 }
 
-# MAESTRO PHASES - Each phase is self-contained and idempotent
-# State files stored in $MAESTRO_STATE with signatures to detect content changes
+# DOTFILES PHASES - Each phase is self-contained and idempotent
+# State files stored in $DOTFILES_STATE with signatures to detect content changes
 # Order: symlinks → homebrew → packages → defaults → path
-# Dependencies: symlinks creates ~/.bin (used by _maestro_path)
+# Dependencies: symlinks creates ~/.bin (used by _dotfiles_path)
 
-_maestro_symlinks() {
+_dotfiles_symlinks() {
   [[ -z "$CLOUD_FOLDER" ]] && _log "→" "CLOUD_FOLDER not set; skipping symlinks"
   [[ ! -d "$CLOUD_FOLDER" ]] && return
-  
-  mkdir -p "$MAESTRO_STATE"
+
+  mkdir -p "$DOTFILES_STATE"
   
   # Track processed sources to avoid duplicates
   typeset -A processed_sources
@@ -208,10 +208,10 @@ _maestro_symlinks() {
   
   # Phase 2: Auto-discover convention-based .symlink files/folders
   # Match only .symlink files/dirs, not their contents
-  # Scans both MAESTRO_REPO (for zshrc.symlink) and CLOUD_FOLDER (for user configs)
+  # Scans both DOTFILES_REPO (for zshrc.symlink) and CLOUD_FOLDER (for user configs)
   # shellcheck disable=SC2206,SC2296,SC1036,SC1088
   local symlink_files=()
-  symlink_files+=($MAESTRO_REPO/*.symlink(N.))        # Repo root files (e.g., zshrc.symlink)
+  symlink_files+=($DOTFILES_REPO/*.symlink(N.))        # Repo root files (e.g., zshrc.symlink)
   symlink_files+=($CLOUD_FOLDER/**/*.symlink(N.))  # Cloud folder files
   symlink_files+=($CLOUD_FOLDER/**/*.symlink/(N/)) # Cloud folder directories
   
@@ -249,7 +249,7 @@ _maestro_symlinks() {
   [[ $updated -gt 0 ]] && _log "✓" "Symlinks: $updated updated"
 }
 
-_maestro_homebrew() {
+_dotfiles_homebrew() {
   [[ "$OSTYPE" != "darwin"* ]] && return
   _has_command brew && return
   _log "↻" "Installing Homebrew..."
@@ -262,43 +262,43 @@ _maestro_homebrew() {
   brew analytics off 2>/dev/null && _log "✓" "Homebrew installed"
 }
 
-_maestro_packages() {
+_dotfiles_packages() {
   _has_command brew || return
   [[ ! -r "$HOME/.Brewfile" ]] && return
-  _run_if_changed "$HOME/.Brewfile" "$MAESTRO_STATE/Brewfile" \
+  _run_if_changed "$HOME/.Brewfile" "$DOTFILES_STATE/Brewfile" \
     '_log "↻" "Installing packages..."; brew bundle --file="$HOME/.Brewfile" --no-upgrade 2>/dev/null && _log "✓" "Packages installed" || true'
 }
 
-_maestro_npm_packages() {
+_dotfiles_npm_packages() {
   _has_command npm || return
   local npm_file="$CLOUD_FOLDER/packages/npmrc-packages"
   [[ ! -r "$npm_file" ]] && return
-  _run_if_changed "$npm_file" "$MAESTRO_STATE/npm" \
+  _run_if_changed "$npm_file" "$DOTFILES_STATE/npm" \
     "_log '↻' 'Installing npm packages...'; cat \"$npm_file\" | grep -v '^#' | grep -v '^\$' | xargs -I {} npm install -g {} 2>/dev/null && _log '✓' 'npm packages installed' || true"
 }
 
-_maestro_os_defaults() {
+_dotfiles_os_defaults() {
   local defaults_file="$CLOUD_FOLDER/macos/macos-defaults"
   [[ ! -r "$defaults_file" ]] && return
-  _run_if_changed "$defaults_file" "$MAESTRO_STATE/macos" \
+  _run_if_changed "$defaults_file" "$DOTFILES_STATE/macos" \
     "bash \"$defaults_file\" 2>/dev/null && _log '✓' 'macOS defaults applied' || true"
 }
 
-_maestro_path() {
+_dotfiles_path() {
   [[ -d ~/.bin ]] && [[ ! (" ${path[*]} " =~ " $HOME/.bin ") ]] && path=("$HOME/.bin" $path) && export PATH
 }
 
-_maestro() {
-  mkdir -p "$MAESTRO_STATE"
-  _maestro_symlinks
-  _maestro_homebrew
-  _maestro_packages
-  _maestro_npm_packages
-  _maestro_os_defaults
-  _maestro_path
+_dotfiles() {
+  mkdir -p "$DOTFILES_STATE"
+  _dotfiles_symlinks
+  _dotfiles_homebrew
+  _dotfiles_packages
+  _dotfiles_npm_packages
+  _dotfiles_os_defaults
+  _dotfiles_path
 }
 
-_maestro
+_dotfiles
 
 # SHELL CONFIGURATION
 [[ -r "$HOME/.zprofile" ]] && source "$HOME/.zprofile" 2>/dev/null || true
@@ -363,7 +363,7 @@ precmd() { export RPROMPT="%{$fg_bold[cyan]%}%{$reset_color%}"; }
 # You can extend this orchestrator in ~/.zshrc.local using these helpers:
 #   - _has_command <cmd>         - Check if command exists
 #   - _run_if_changed <file> <state-key> '<command>'  - Run only when file changes
-#   - $MAESTRO_STATE             - State directory (~/.maestro/.state/)
-# Example: _has_command myapp && _run_if_changed "$HOME/.myapp/config" "$MAESTRO_STATE/myapp" 'myapp setup'
+#   - $DOTFILES_STATE             - State directory (~/.dotfiles/.state/)
+# Example: _has_command myapp && _run_if_changed "$HOME/.myapp/config" "$DOTFILES_STATE/myapp" 'myapp setup'
 [[ -r "$HOME/.zshrc.local" ]] && source "$HOME/.zshrc.local" 2>/dev/null || true
 
