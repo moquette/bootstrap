@@ -13,20 +13,18 @@ BACKUP_SUFFIX=".backup.$(date +%Y%m%d_%H%M%S)"
 # Format: CUSTOM_SYMLINKS=("source|target" "source|target" ...)
 # Use for: non-standard paths, renamed targets, nested directories
 # Permissions: 755 for directories (644 for files), SSH keys get 600/644
-# 
+#
 # Convention-based symlinks (auto-discovered):
 #   - Files/folders ending in .symlink are auto-discovered
 #   - basename.symlink → ~/.basename
 #   - Example: aliases.symlink → ~/.aliases
 #   - Example: ssh.symlink/ → ~/.ssh/
+#
 CUSTOM_SYMLINKS=(
   # Add explicit mappings here for edge cases
   # Example: "$CLOUD_FOLDER/Code.symlink|~/Code"  # No leading dot
-  "$CLOUD_FOLDER/ai/claude/CLAUDE.md|~/.claude/CLAUDE.md"
-  "$CLOUD_FOLDER/ai/claude/CLAUDE.md|~/.claude/README.md"
-  "$CLOUD_FOLDER/ai/mcps/claude/claude_desktop_config.json|~/Library/Application Support/Claude/claude_desktop_config.json"
-  "$CLOUD_FOLDER/ai/mcps/vscode/mcp.json|~/Library/Application Support/Code/User/mcp.json"
-)
+  # Define your custom symlinks in ~/.zshrc.local (machine-specific.
+  )
 
 # DOTS HELPERS - Detection & Formatting
 # shellcheck disable=SC2154,SC1083,SC2046
