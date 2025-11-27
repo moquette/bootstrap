@@ -2,7 +2,7 @@
 
 **A revolutionary single-file zsh orchestrator that combines convention-based automation with self-healing architecture.**
 
-Unlike traditional dotfiles that require manual symlinking and setup, Dots automatically discovers, configures, and maintains your entire development environment across machines—with zero manual intervention after the initial curl.
+Unlike traditional dotfiles that require manual symlinking and setup, Maestro automatically discovers, configures, and maintains your entire development environment across machines—with zero manual intervention after the initial curl.
 
 ## What Makes This Different?
 
@@ -16,8 +16,8 @@ Machine-specific configs in `~/.zshrc.local` automatically recreate themselves o
 
 ### 📍 Two-Location Design
 
-- **Public repo** (`~/.dotfiles/`) - Generic, shareable orchestrator
-- **Private cloud** (`~/Library/Mobile Documents/.../Dots/`) - Your personal configs, never committed
+- **Public repo** (`~/.maestro/`) - Generic, shareable orchestrator
+- **Private cloud** (`~/Library/Mobile Documents/.../Maestro/`) - Your personal configs, never committed
 
 ### 🎯 Idempotent Everything
 
@@ -47,9 +47,9 @@ curl -fsSL https://raw.githubusercontent.com/moquette/maestro/main/zshrc.symlink
 ### Convention Over Configuration
 
 ```
-~/cloud/shell/aliases.symlink     →  ~/.aliases
-~/cloud/ssh.symlink/              →  ~/.ssh/
-~/cloud/config/vimrc.symlink      →  ~/.vimrc
+$CLOUD_FOLDER/shell/aliases.symlink     →  ~/.aliases
+$CLOUD_FOLDER/ssh.symlink/              →  ~/.ssh/
+$CLOUD_FOLDER/config/vimrc.symlink      →  ~/.vimrc
 ```
 
 Name it `.symlink`, put it in cloud storage, done. The orchestrator finds and links everything automatically.
@@ -167,8 +167,8 @@ In ~/projects/my-app on 🌱 main
 
 ```bash
 # In cloud storage:
-~/cloud/shell/aliases.symlink       # Auto-discovered → ~/.aliases
-~/cloud/config/gitconfig.symlink    # Auto-discovered → ~/.gitconfig
+$CLOUD_FOLDER/shell/aliases.symlink       # Auto-discovered → ~/.aliases
+$CLOUD_FOLDER/config/gitconfig.symlink    # Auto-discovered → ~/.gitconfig
 ```
 
 Just name it `.symlink` and place in cloud storage. Zero configuration.
@@ -240,7 +240,7 @@ Available everywhere (orchestrator + `~/.zshrc.local`):
 Organized by purpose, not by tradition:
 
 ```
-~/cloud/
+$CLOUD_FOLDER/
 ├── shell/           # Pure shell configs (aliases, zprofile, zshrc.local)
 ├── packages/        # Brewfile, npm packages
 ├── config/          # Application dotfiles (gitconfig, vimrc)
@@ -283,7 +283,7 @@ Maestro tracks setup completion in `$MAESTRO_REPO/.state/`:
 **Reset everything:**
 
 ```bash
-rm -rf ~/.maestro/.state && source ~/.zshrc
+rm -rf "$MAESTRO_REPO/.state" && source ~/.zshrc
 ```
 
 ## Customization (Legacy Documentation)
@@ -342,7 +342,7 @@ All customization options are at the **top of `~/.zshrc`** in the **CUSTOMIZATIO
    - Define custom aliases in your `~/.aliases` file
    - Configure source via `CUSTOM_SYMLINKS` to use cloud storage version
    - Example: `"$CLOUD_FOLDER/shell/aliases.symlink|~/.aliases"`
-   - Dots auto-sources from `~/.aliases` if it exists
+   - Maestro auto-sources from `~/.aliases` if it exists
    - Changes take effect on next shell startup
 
 4. **Vim Configuration** (managed via `~/.vimrc` file)
@@ -375,41 +375,37 @@ All customization options are at the **top of `~/.zshrc`** in the **CUSTOMIZATIO
      # other-package
      ```
 
-## Automation & Dots State Management
+## Automation & State Management
 
-Dots uses a state directory `~/.dots/` to track which setup steps have been completed. Smart signature detection enables idempotent re-runs:
+Maestro uses a state directory `$MAESTRO_REPO/.state/` to track which setup steps have been completed. Smart signature detection enables idempotent re-runs:
 
-- **`~/.dots/brewfile`** - Brewfile MD5 signature
+- **`$MAESTRO_REPO/.state/Brewfile`** - Brewfile MD5 signature
 
   - Automatically re-runs when `~/.Brewfile` content changes
   - Installs/updates packages based on current Brewfile
 
-- **`~/.dots/npm`** - npm packages file MD5 signature
+- **`$MAESTRO_REPO/.state/npm`** - npm packages file MD5 signature
 
-  - Automatically re-runs when `~/.npmrc-packages` content changes
+  - Automatically re-runs when npm packages file content changes
   - Re-installs global npm packages when file changes
 
-- **`~/.dots/macos`** - macOS defaults file MD5 signature
+- **`$MAESTRO_REPO/.state/macos`** - macOS defaults file MD5 signature
 
-  - Automatically re-runs when `~/.macos-defaults` content changes
+  - Automatically re-runs when macOS defaults file content changes
   - Re-applies all configured defaults when file changes
 
-- **`~/.dots/symlinks`** - Symlinks setup flag
-  - One-time setup after first run (no re-run unless manually deleted)
-
-**To reset a specific component**, delete the corresponding flag file:
+**To reset a specific component**, delete the corresponding state file:
 
 ```bash
-rm ~/.dots/brewfile    # Re-run package installation on next shell
-rm ~/.dots/macos       # Re-run macOS defaults on next shell
-rm ~/.dots/git         # Re-run git configuration on next shell
-rm ~/.dots/symlinks    # Re-run symlinks setup on next shell
+rm "$MAESTRO_REPO/.state/Brewfile"    # Re-run package installation on next shell
+rm "$MAESTRO_REPO/.state/macos"       # Re-run macOS defaults on next shell
+rm "$MAESTRO_REPO/.state/npm"         # Re-run npm packages on next shell
 ```
 
 **To reset everything:**
 
 ```bash
-rm -rf ~/.dots
+rm -rf "$MAESTRO_REPO/.state"
 ```
 
 ## System Requirements
@@ -419,7 +415,7 @@ rm -rf ~/.dots
 - **Homebrew** (auto-installs if needed)
 - **Cloud storage** (optional, for syncing configs across machines)
 
-## Why Dots?
+## Why Maestro?
 
 **Traditional dotfiles:**
 
@@ -429,7 +425,7 @@ rm -rf ~/.dots
 - Repeat on every machine
 - Hope you didn't forget anything
 
-**Dots:**
+**Maestro:**
 
 - Curl one file
 - Source it
@@ -440,14 +436,14 @@ rm -rf ~/.dots
 ## File Structure
 
 ```text
-~/.maestro/                # Public repo (generic orchestrator)
+$MAESTRO_REPO/             # Public repo (generic orchestrator)
 ├── zshrc.symlink          # Main orchestrator (single-file design)
 ├── .state/                # MD5 signatures for change detection
 ├── README.md              # This file
 ├── LICENSE                # MIT License
 └── maestro.code-workspace # VS Code multi-root workspace
 
-~/cloud/Maestro/           # Private cloud storage (your configs)
+$CLOUD_FOLDER/             # Private cloud storage (your configs)
 ├── shell/                 # Shell configs (auto-discovered via .symlink)
 ├── packages/              # Brewfile, npm packages
 ├── config/                # gitconfig, vimrc
@@ -462,7 +458,7 @@ rm -rf ~/.dots
 VS Code workspace with multi-root setup:
 
 ```bash
-code ~/.maestro/maestro.code-workspace
+code "$MAESTRO_REPO/maestro.code-workspace"
 ```
 
 **Features:**
