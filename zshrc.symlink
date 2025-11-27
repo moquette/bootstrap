@@ -6,7 +6,9 @@
 CLOUD_FOLDER="$HOME/Library/Mobile Documents/com~apple~CloudDocs/Dots"
 
 # STATE & BACKUP - Location for dots state files and backup naming
-DOTS_STATE="$HOME/.dots"
+# Derive repo location from this script's path (works regardless of clone name)
+DOTS_REPO="$(cd "$(dirname "$(readlink ~/.zshrc 2>/dev/null || echo ~/.zshrc)")" && pwd)"
+DOTS_STATE="$DOTS_REPO/.state"
 BACKUP_SUFFIX=".backup.$(date +%Y%m%d_%H%M%S)"
 
 # Custom Symlinks (Optional - explicit mappings for edge cases)
@@ -138,10 +140,12 @@ _dots_symlinks() {
   
   # Phase 2: Auto-discover convention-based .symlink files/folders
   # Match only .symlink files/dirs, not their contents
+  # Scans both DOTS_REPO (for zshrc.symlink) and CLOUD_FOLDER (for user configs)
   # shellcheck disable=SC2206,SC2296,SC1036,SC1088
   local symlink_files=()
-  symlink_files+=($CLOUD_FOLDER/**/*.symlink(N.))  # Files only
-  symlink_files+=($CLOUD_FOLDER/**/*.symlink/(N/)) # Directories only
+  symlink_files+=($DOTS_REPO/*.symlink(N.))        # Repo root files (e.g., zshrc.symlink)
+  symlink_files+=($CLOUD_FOLDER/**/*.symlink(N.))  # Cloud folder files
+  symlink_files+=($CLOUD_FOLDER/**/*.symlink/(N/)) # Cloud folder directories
   
   for src in "${symlink_files[@]}"; do
     # Skip if already processed by explicit array
@@ -194,21 +198,23 @@ _dots_homebrew() {
 _dots_packages() {
   _has_command brew || return
   [[ ! -r "$HOME/.Brewfile" ]] && return
-  _run_if_changed "$HOME/.Brewfile" "$DOTS_STATE/brewfile" \
+  _run_if_changed "$HOME/.Brewfile" "$DOTS_STATE/Brewfile" \
     'echo "Installing packages..."; brew bundle --file="$HOME/.Brewfile" --no-upgrade 2>/dev/null && echo "Packages installed." || true'
 }
 
 _dots_npm_packages() {
   _has_command npm || return
-  [[ ! -r "$HOME/.npmrc-packages" ]] && return
-  _run_if_changed "$HOME/.npmrc-packages" "$DOTS_STATE/npm" \
-    'echo "Installing npm packages..."; cat "$HOME/.npmrc-packages" | grep -v "^#" | grep -v "^$" | xargs -I {} npm install -g {} 2>/dev/null && echo "npm packages installed." || true'
+  local npm_file="$CLOUD_FOLDER/system/npmrc-packages"
+  [[ ! -r "$npm_file" ]] && return
+  _run_if_changed "$npm_file" "$DOTS_STATE/npm" \
+    "echo 'Installing npm packages...'; cat \"$npm_file\" | grep -v '^#' | grep -v '^\$' | xargs -I {} npm install -g {} 2>/dev/null && echo 'npm packages installed.' || true"
 }
 
 _dots_os_defaults() {
-  [[ ! -r "$HOME/.macos-defaults" ]] && return
-  _run_if_changed "$HOME/.macos-defaults" "$DOTS_STATE/macos" \
-    'bash "$HOME/.macos-defaults" 2>/dev/null && echo "macOS defaults applied." || true'
+  local defaults_file="$CLOUD_FOLDER/system/macos-defaults"
+  [[ ! -r "$defaults_file" ]] && return
+  _run_if_changed "$defaults_file" "$DOTS_STATE/macos" \
+    "bash \"$defaults_file\" 2>/dev/null && echo 'macOS defaults applied.' || true"
 }
 
 _dots_path() {
