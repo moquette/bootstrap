@@ -1,32 +1,24 @@
 {
   "folders": [
     {
-      "name": "Dotfiles Cloud",
-      // Make sure to update this path if your iCloud Drive is stored elsewhere
-      "path": "/Users/moquette/Library/Mobile Documents/com~apple~CloudDocs/Dots"
+      "name": "Maestro Cloud",
+      "path": "/Users/moquette/Library/Mobile Documents/com~apple~CloudDocs/Maestro"
     },
     {
-      "name": "Dotfiles",
+      "name": "Maestro",
       "path": "."
     }
   ],
   "settings": {
-    // Explorer settings
     "explorer.sortOrder": "type",
     "explorer.compactFolders": false,
-
-    // Theme & editor
     "workbench.colorTheme": "Default Dark Modern",
     "workbench.editor.enablePreview": true,
     "workbench.editor.enablePreviewFromQuickOpen": false,
     "editor.minimap.enabled": false,
-
-    // Git settings
     "git.confirmSync": false,
     "git.autofetch": true,
-    "git.ignoredRepositories": ["${workspaceFolder:My Cloud}"],
-
-    // File associations - treat your config files with proper syntax highlighting
+    "git.ignoredRepositories": ["${workspaceFolder:Maestro Cloud}"],
     "files.associations": {
       "aliases.txt": "shellscript",
       "aliases.symlink": "shellscript",
@@ -47,20 +39,14 @@
       "zlogout.txt": "shellscript",
       "zlogout.symlink": "shellscript"
     },
-
-    // File exclusions
     "files.exclude": {
       "**/.DS_Store": true
     },
-
-    // Search exclusions
     "search.exclude": {
       "**/.git": true,
       "**/.DS_Store": true,
       "**/*.backup.*": true
     },
-
-    // ShellCheck settings - tell it we're writing zsh, not bash
     "shellcheck.customArgs": ["-s", "bash", "-e", "SC2154", "-e", "SC1083"]
   },
   "tasks": {
@@ -70,38 +56,20 @@
         "label": "Source .zshrc",
         "type": "shell",
         "command": "source ~/.zshrc && echo '✓ .zshrc sourced successfully'",
-        "problemMatcher": [],
-        "presentation": {
-          "echo": true,
-          "reveal": "always",
-          "focus": false,
-          "panel": "shared"
-        }
+        "problemMatcher": []
       },
       {
-        "label": "Test Dots Setup",
+        "label": "Test Maestro Setup",
         "type": "shell",
         "command": "zsh",
-        "args": ["${workspaceFolder:My Cloud}/bin/test-dots"],
-        "problemMatcher": [],
-        "presentation": {
-          "echo": true,
-          "reveal": "always",
-          "focus": true,
-          "panel": "dedicated"
-        }
+        "args": ["${workspaceFolder:Maestro Cloud}/bin.symlink/test-maestro"],
+        "problemMatcher": []
       },
       {
-        "label": "Reset Dots State",
+        "label": "Reset Maestro State",
         "type": "shell",
-        "command": "rm -rf ~/.dots && echo '✓ Dots state reset - restart shell to re-run setup'",
-        "problemMatcher": [],
-        "presentation": {
-          "echo": true,
-          "reveal": "always",
-          "focus": false,
-          "panel": "shared"
-        }
+        "command": "rm -rf ~/.maestro/.state && echo '✓ Maestro state reset'",
+        "problemMatcher": []
       }
     ]
   }
