@@ -1,0 +1,4 @@
+{
+  "recommendations": ["timonwong.shellcheck", "mads-hartmann.bash-ide-vscode"],
+  "unwantedRecommendations": ["foxundermoon.shell-format"]
+}

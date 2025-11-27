@@ -1,0 +1,43 @@
+{
+  "Custom Symlink Entry": {
+    "scope": "shellscript",
+    "prefix": "symlink",
+    "body": [
+      "\"\\$CLOUD_FOLDER/${1:source-path}|~/${2:target-path}\""
+    ],
+    "description": "Add a new symlink to CUSTOM_SYMLINKS array"
+  },
+  "Run If Changed Pattern": {
+    "scope": "shellscript",
+    "prefix": "runif",
+    "body": [
+      "_run_if_changed \"${1:\\$HOME/.config-file}\" \"\\$DOTS_STATE/${2:state-key}\" \\",
+      "  '${3:echo \"Running...\"; command-here}'"
+    ],
+    "description": "Run command only when file content changes"
+  },
+  "Has Command Check": {
+    "scope": "shellscript",
+    "prefix": "hascmd",
+    "body": [
+      "_has_command ${1:command} || return"
+    ],
+    "description": "Check if command exists before proceeding"
+  },
+  "Log Message": {
+    "scope": "shellscript",
+    "prefix": "log",
+    "body": [
+      "_log \"${1:✓}\" \"${2:message}\""
+    ],
+    "description": "Log a formatted message"
+  },
+  "Conditional File Source": {
+    "scope": "shellscript",
+    "prefix": "source",
+    "body": [
+      "[[ -r \"${1:\\$HOME/.file}\" ]] && source \"$1\" 2>/dev/null || true"
+    ],
+    "description": "Safely source a file if it exists"
+  }
+}
