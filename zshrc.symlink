@@ -190,7 +190,7 @@ _maestro_homebrew() {
   [[ ! -x "$brew_path" ]] && brew_path="/usr/local/bin/brew"
   [[ ! -x "$brew_path" ]] && { _log "✗" "Homebrew install failed"; return 1; }
   eval "$("$brew_path" shellenv)" && export PATH
-  [[ -f ~/.zprofile ]] && ! grep -q "brew shellenv" ~/.zprofile && echo "eval \"\$("$brew_path" shellenv)\"" >> ~/.zprofile
+  [[ -f ~/.zprofile ]] && ! grep -q "brew shellenv" ~/.zprofile && echo "eval \"\$(${brew_path} shellenv)\"" >> ~/.zprofile
   brew analytics off 2>/dev/null && _log "✓" "Homebrew installed"
 }
 
