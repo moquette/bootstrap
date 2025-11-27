@@ -211,5 +211,10 @@ export PROMPT=$'\nIn %{$fg_bold[cyan]%}%~%{$reset_color%} $(_git_info)$(_unpushe
 precmd() { export RPROMPT="%{$fg_bold[cyan]%}%{$reset_color%}"; }
 
 # PERSONAL CONFIGURATION - Source local customizations (not committed)
+# You can extend this orchestrator in ~/.zshrc.local using these helpers:
+#   - _has_command <cmd>         - Check if command exists
+#   - _run_if_changed <file> <state-key> '<command>'  - Run only when file changes
+#   - $DOTS_STATE                - State directory (~/.dots/)
+# Example: _has_command myapp && _run_if_changed "$HOME/.myapp/config" "$DOTS_STATE/myapp" 'myapp setup'
 [[ -r "$HOME/.zshrc.local" ]] && source "$HOME/.zshrc.local" 2>/dev/null || true
 

@@ -55,6 +55,32 @@ In ~/projects/my-app on 🌱 main
 
 ## Customization
 
+### Philosophy
+
+Dots follows a **generic orchestrator + personal config** design:
+
+- **`.zshrc`** (this repo) - Generic, shareable orchestrator with sensible defaults
+- **`~/.zshrc.local`** (your machine) - Personal extensions, never committed
+
+The orchestrator provides helper functions that `.zshrc.local` can leverage:
+
+```bash
+# In ~/.zshrc.local - extend the orchestrator
+_has_command myapp && _run_if_changed \
+  "$HOME/.myapp/config" \
+  "$DOTS_STATE/myapp" \
+  'echo "Setting up myapp..."; myapp setup'
+```
+
+**Available Helpers:**
+- `_has_command <cmd>` - Check if command exists before running setup
+- `_run_if_changed <file> <state-key> '<command>'` - Run command only when file content changes (MD5 check)
+- `$DOTS_STATE` - State directory (`~/.dots/`) for tracking setup completions
+
+This pattern keeps the orchestrator generic while letting you add machine-specific setup (API keys, personal tools, etc.) in `.zshrc.local`.
+
+## Customization
+
 All customization options are at the **top of `~/.zshrc`** in the **CUSTOMIZATION SECTION** for easy access:
 
 ### Configuration Sections
