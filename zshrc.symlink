@@ -204,14 +204,14 @@ _dots_packages() {
 
 _dots_npm_packages() {
   _has_command npm || return
-  local npm_file="$CLOUD_FOLDER/system/npmrc-packages"
+  local npm_file="$CLOUD_FOLDER/packages/npmrc-packages"
   [[ ! -r "$npm_file" ]] && return
   _run_if_changed "$npm_file" "$DOTS_STATE/npm" \
     "echo 'Installing npm packages...'; cat \"$npm_file\" | grep -v '^#' | grep -v '^\$' | xargs -I {} npm install -g {} 2>/dev/null && echo 'npm packages installed.' || true"
 }
 
 _dots_os_defaults() {
-  local defaults_file="$CLOUD_FOLDER/system/macos-defaults"
+  local defaults_file="$CLOUD_FOLDER/macos/macos-defaults"
   [[ ! -r "$defaults_file" ]] && return
   _run_if_changed "$defaults_file" "$DOTS_STATE/macos" \
     "bash \"$defaults_file\" 2>/dev/null && echo 'macOS defaults applied.' || true"
