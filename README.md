@@ -26,7 +26,7 @@ MD5 signatures detect file changes. Packages, system settings, and configs only 
 ## Quick Start
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/moquette/maestro/main/zshrc.symlink -o ~/.zshrc && source ~/.zshrc
+curl -fsSL https://raw.githubusercontent.com/moquette/dotfiles/main/install.sh | bash
 ```
 
 **That's it.** One command. On a fresh macOS system, this:
