@@ -1,12 +1,12 @@
 {
   "folders": [
     {
-      "name": "My Cloud",
+      "name": "My Dotfiles Cloud",
       // Make sure to update this path if your iCloud Drive is stored elsewhere
       "path": "/Users/moquette/Library/Mobile Documents/com~apple~CloudDocs/Dots"
     },
     {
-      "name": "Dots Project",
+      "name": "Dotfiles Project",
       "path": "."
     }
   ],
